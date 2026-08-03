@@ -2,8 +2,11 @@ import SwiftUI
 
 // MARK: - Bouton principal
 
-/// Le CTA de l'app. Un seul par écran.
+/// Le CTA de l'app, façon carton de jeu : aplat franc, contour encré, ombre
+/// franche décalée. Un seul par écran.
 struct PrimaryButton: View {
+    @Environment(\.skin) private var skin
+
     let title: String
     var systemImage: String?
     var tint: Color = Theme.brand
@@ -22,8 +25,6 @@ struct PrimaryButton: View {
                 if let systemImage {
                     Image(systemName: systemImage)
                         .font(.system(size: 17, weight: .bold))
-                        // Purement décoratif : sans ça VoiceOver annonce le nom
-                        // du symbole avant le libellé du bouton.
                         .accessibilityHidden(true)
                 }
                 Text(title)
@@ -34,30 +35,25 @@ struct PrimaryButton: View {
             .frame(height: 56)
             .background(
                 RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                    .fill(
-                        // Léger dégradé diagonal : le bouton prend du volume
-                        // sans changer de couleur perçue.
-                        LinearGradient(
-                            colors: [tint, tint.opacity(0.78)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(tint)
                     .overlay(
                         RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                            .strokeBorder(.white.opacity(0.18), lineWidth: 1)
+                            .strokeBorder(skin.outline, lineWidth: Theme.stroke)
                     )
-                    .shadow(color: tint.opacity(0.45), radius: 18, y: 8)
+                    .shadow(color: skin.outline, radius: 0, y: Theme.drop)
             )
         }
         .buttonStyle(PressedStyle())
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.4)
+        .padding(.bottom, Theme.drop)
     }
 }
 
 /// Bouton secondaire, discret, sans fond plein.
 struct GhostButton: View {
+    @Environment(\.skin) private var skin
+
     let title: String
     var systemImage: String?
     let action: () -> Void
@@ -75,7 +71,7 @@ struct GhostButton: View {
                 }
                 Text(title).font(Theme.body(16))
             }
-            .foregroundStyle(Theme.inkMuted)
+            .foregroundStyle(skin.inkMuted)
             .frame(maxWidth: .infinity)
             .frame(height: Theme.touchTarget)
         }
@@ -83,19 +79,23 @@ struct GhostButton: View {
     }
 }
 
-/// Enfoncement standard iOS : léger, immédiat, jamais mou.
+/// Enfoncement cartoon : le bouton descend dans son ombre.
 struct PressedStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .offset(y: configuration.isPressed ? 3 : 0)
+            .scaleEffect(configuration.isPressed ? 0.99 : 1)
             .animation(Theme.snap, value: configuration.isPressed)
     }
 }
 
 // MARK: - Surfaces
 
-/// Carte de contenu translucide, la brique de mise en page de l'app.
+/// Carte de contenu opaque, contour encré, ombre franche. La brique de mise en
+/// page de l'app — plus aucune translucidité.
 struct Panel<Content: View>: View {
+    @Environment(\.skin) private var skin
+
     var padding: CGFloat = 16
     @ViewBuilder let content: Content
 
@@ -104,28 +104,38 @@ struct Panel<Content: View>: View {
             .padding(padding)
             .background(
                 RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                    .fill(Theme.surface)
+                    .fill(skin.panel)
                     .overlay(
                         RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                            .strokeBorder(Theme.hairline, lineWidth: 1)
+                            .strokeBorder(skin.outline, lineWidth: Theme.stroke)
                     )
+                    .shadow(color: skin.outline, radius: 0, y: Theme.drop)
             )
+            .padding(.bottom, Theme.drop)
     }
 }
 
-/// Petite étiquette de phase, en haut des écrans de jeu.
+/// Étiquette de phase : autocollant plein aux couleurs du moment.
 struct PhasePill: View {
+    @Environment(\.skin) private var skin
+
     let text: String
     var tint: Color = Theme.brandLight
+    /// Vrai sur les teintes claires (ciel, ambre, menthe).
+    var darkText: Bool = false
 
     var body: some View {
         Text(text.uppercased())
             .font(Theme.caption(12))
             .tracking(1.2)
-            .foregroundStyle(tint)
+            .foregroundStyle(darkText ? Theme.night : .white)
             .padding(.horizontal, 14)
             .padding(.vertical, 7)
-            .background(Capsule().fill(tint.opacity(0.16)))
+            .background(
+                Capsule()
+                    .fill(tint)
+                    .overlay(Capsule().strokeBorder(skin.outline, lineWidth: 2))
+            )
     }
 }
 
@@ -133,6 +143,8 @@ struct PhasePill: View {
 
 /// Réglage d'un nombre d'infiltrés. Cibles tactiles à 44 pt.
 struct CounterRow: View {
+    @Environment(\.skin) private var skin
+
     let title: String
     let symbol: String
     let tint: Color
@@ -144,14 +156,19 @@ struct CounterRow: View {
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: symbol)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(tint)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(Theme.night)
                 .frame(width: 30, height: 30)
-                .background(Circle().fill(tint.opacity(0.16)))
+                .background(
+                    Circle()
+                        .fill(tint)
+                        .overlay(Circle().strokeBorder(skin.outline, lineWidth: 2))
+                )
+                .accessibilityHidden(true)
 
             Text(title)
                 .font(Theme.body(16))
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(skin.ink)
 
             Spacer(minLength: 8)
 
@@ -159,7 +176,7 @@ struct CounterRow: View {
                 counterButton("minus", enabled: canDecrement) { onChange(-1) }
                 Text("\(value)")
                     .font(Theme.heading(19))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
                     .frame(minWidth: 26)
                     .contentTransition(.numericText())
                 counterButton("plus", enabled: canIncrement) { onChange(1) }
@@ -174,11 +191,15 @@ struct CounterRow: View {
         } label: {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(enabled ? Theme.ink : Theme.inkFaint)
+                .foregroundStyle(enabled ? skin.ink : skin.inkFaint)
                 .frame(width: Theme.touchTarget, height: Theme.touchTarget)
                 .background(
                     RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(Theme.surfaceStrong)
+                        .fill(skin.panelStrong)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                .strokeBorder(skin.outline.opacity(enabled ? 1 : 0.3), lineWidth: 2)
+                        )
                 )
         }
         .buttonStyle(PressedStyle())
@@ -190,6 +211,8 @@ struct CounterRow: View {
 // MARK: - Interrupteur d'option
 
 struct OptionToggle: View {
+    @Environment(\.skin) private var skin
+
     let title: String
     let subtitle: String
     @Binding var isOn: Bool
@@ -199,10 +222,10 @@ struct OptionToggle: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(Theme.body(15))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
                 Text(subtitle)
                     .font(Theme.caption(12))
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -212,8 +235,10 @@ struct OptionToggle: View {
 
 // MARK: - Badge de rôle
 
-/// Révélation du rôle d'un joueur, après élimination ou en fin de manche.
+/// Révélation du rôle d'un joueur : autocollant plein, texte encre.
 struct RoleBadge: View {
+    @Environment(\.skin) private var skin
+
     let role: Role
     var compact: Bool = false
 
@@ -221,24 +246,32 @@ struct RoleBadge: View {
         HStack(spacing: 6) {
             Image(systemName: role.symbol)
                 .font(.system(size: compact ? 11 : 13, weight: .bold))
+                .accessibilityHidden(true)
             Text(role.displayName)
                 .font(Theme.caption(compact ? 12 : 14))
         }
-        .foregroundStyle(Theme.color(for: role))
+        .foregroundStyle(Theme.night)
         .padding(.horizontal, compact ? 9 : 12)
         .padding(.vertical, compact ? 5 : 7)
-        .background(Capsule().fill(Theme.color(for: role).opacity(0.16)))
+        .background(
+            Capsule()
+                .fill(Theme.color(for: role))
+                .overlay(Capsule().strokeBorder(skin.outline, lineWidth: 2))
+        )
     }
 }
 
 // MARK: - Avatars
 
-/// Pastille colorée + initiale, façon cartoon. La couleur est déterminée par
-/// le nom : un joueur garde son avatar partout et d'une manche à l'autre.
+/// Pastille colorée + initiale, cerclée comme un autocollant. Passer la table
+/// garantit des couleurs toutes distinctes jusqu'à 8 joueurs.
 struct AvatarView: View {
+    @Environment(\.skin) private var skin
+
     let name: String
     var size: CGFloat = 34
     var dimmed: Bool = false
+    var table: [String] = []
 
     private var initial: String {
         String(name.trimmingCharacters(in: .whitespaces).prefix(1)).uppercased()
@@ -247,19 +280,12 @@ struct AvatarView: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(Theme.avatarColor(for: name))
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [.white.opacity(0.28), .clear],
-                        startPoint: .topLeading,
-                        endPoint: .center
-                    )
-                )
+                .fill(Theme.avatarColor(for: name, table: table))
             Text(initial.isEmpty ? "?" : initial)
                 .font(.system(size: size * 0.44, weight: .heavy, design: .rounded))
                 .foregroundStyle(.white)
         }
+        .overlay(Circle().strokeBorder(skin.outline, lineWidth: max(2, size * 0.06)))
         .frame(width: size, height: size)
         .saturation(dimmed ? 0.15 : 1)
         .opacity(dimmed ? 0.55 : 1)
@@ -269,9 +295,11 @@ struct AvatarView: View {
 
 // MARK: - L'œil reptilien
 
-/// La signature des infiltrés : un œil vert à pupille fendue, validé par
-/// Arthur comme identité visuelle de Mytho. Vectoriel : net à toutes tailles.
+/// La signature des infiltrés : un œil vert à pupille fendue, cerné d'un gros
+/// contour encré. Vectoriel : net à toutes tailles.
 struct ReptileEyeView: View {
+    @Environment(\.skin) private var skin
+
     var size: CGFloat = 120
     var blinking: Bool = false
 
@@ -282,24 +310,24 @@ struct ReptileEyeView: View {
             Circle()
                 .fill(Color(red: 0.070, green: 0.230, blue: 0.165))
             Circle()
-                .strokeBorder(Theme.mint, lineWidth: max(2, size * 0.028))
+                .strokeBorder(skin.outline, lineWidth: max(3, size * 0.05))
             Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [Color(red: 0.487, green: 0.910, blue: 0.722), Theme.mint],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+                .strokeBorder(Theme.mint, lineWidth: max(2, size * 0.032))
+                .padding(size * 0.05)
+            Circle()
+                .fill(Color(red: 0.487, green: 0.910, blue: 0.722))
+                .frame(width: size * 0.56, height: size * 0.56)
+                .overlay(
+                    Circle().strokeBorder(skin.outline, lineWidth: max(2, size * 0.032))
                 )
-                .frame(width: size * 0.62, height: size * 0.62)
             Ellipse()
                 .fill(Color(red: 0.016, green: 0.082, blue: 0.051))
-                .frame(width: size * 0.13, height: size * 0.50)
+                .frame(width: size * 0.13, height: size * 0.44)
                 .scaleEffect(y: pupilScale)
             Ellipse()
-                .fill(.white.opacity(0.50))
+                .fill(.white.opacity(0.55))
                 .frame(width: size * 0.11, height: size * 0.07)
-                .offset(x: -size * 0.08, y: -size * 0.13)
+                .offset(x: -size * 0.08, y: -size * 0.12)
         }
         .frame(width: size, height: size)
         .onAppear {

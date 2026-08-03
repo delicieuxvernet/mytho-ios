@@ -1,20 +1,22 @@
 import SwiftUI
 import UIKit
 
-/// Source de vérité visuelle. Toute couleur, taille ou animation de l'app vient
-/// d'ici — aucune valeur en dur dans les vues.
+/// Source de vérité visuelle. DA v2 « jeu de société dessiné », validée par
+/// Arthur le 4 août 2026 : aplats francs, gros contours encrés, ombres franches
+/// décalées — zéro flou, zéro transparence, zéro dégradé de verre.
+///
+/// L'app vit en deux peaux : le **jour** (papier crème — on discute, on vote)
+/// et la **nuit** (encre sombre — on pioche en secret, on révèle). Chaque écran
+/// choisit sa peau via l'environnement (`\.skin`).
 enum Theme {
 
-    // MARK: Couleurs
+    // MARK: Accents (identiques jour et nuit)
 
-    /// Nuit profonde : le fond de toute l'app.
-    static let night = Color(red: 0.055, green: 0.067, blue: 0.176)
-    static let nightDeep = Color(red: 0.027, green: 0.035, blue: 0.110)
-    /// Violet de marque, sur les actions principales.
-    static let brand = Color(red: 0.400, green: 0.353, blue: 0.906)
+    /// Violet de marque : la pioche et les actions principales.
+    static let brand = Color(red: 0.424, green: 0.361, blue: 0.941)
     static let brandLight = Color(red: 0.576, green: 0.537, blue: 0.976)
-    /// Ambre : Mr. White, alertes, dernière chance, révélations.
-    static let amber = Color(red: 0.976, green: 0.702, blue: 0.263)
+    /// Ambre : Mr. White, dernière chance, révélations.
+    static let amber = Color(red: 1.000, green: 0.757, blue: 0.271)
     /// Vert : les infiltrés et leurs victoires — la couleur de l'œil reptilien.
     static let mint = Color(red: 0.204, green: 0.827, blue: 0.600)
     /// Rouge corail : vote et élimination.
@@ -22,8 +24,7 @@ enum Theme {
     /// Bleu ciel : la phase de description.
     static let sky = Color(red: 0.298, green: 0.788, blue: 0.941)
 
-    /// Chaque phase du jeu a sa température : c'est ce qui donne le rythme
-    /// d'une app de soirée sans quitter la base nuit.
+    /// Chaque phase du jeu a sa température.
     static func accent(for phase: GamePhase?) -> Color {
         switch phase {
         case .dealing: return brand
@@ -35,12 +36,32 @@ enum Theme {
         }
     }
 
+    // MARK: Couleurs héritées (compat)
+
+    /// Fond nuit — aussi la couleur de lancement et du texte sur teintes claires.
+    static let night = Color(red: 0.082, green: 0.098, blue: 0.212)
+    static let nightDeep = Color(red: 0.059, green: 0.067, blue: 0.161)
+
+    /// Anciennes valeurs de la peau nuit, encore référencées ponctuellement.
+    static let ink = Color.white
+    static let inkMuted = Color.white.opacity(0.62)
+    static let inkFaint = Color.white.opacity(0.38)
+    static let surface = Color.white.opacity(0.07)
+    static let surfaceStrong = Color.white.opacity(0.12)
+    static let hairline = Color.white.opacity(0.14)
+
+    /// Couleur associée à un rôle, pour les révélations.
+    static func color(for role: Role) -> Color {
+        switch role {
+        case .civilian: return mint
+        case .undercover: return brandLight
+        case .mrWhite: return amber
+        }
+    }
+
     // MARK: Avatars
 
-    /// Couleurs franches et joyeuses, façon cartoon. L'attribution par nom est
-    /// déterministe : un joueur garde son avatar d'un écran et d'une manche à
-    /// l'autre. (`String.hashValue` est aléatoire à chaque lancement — on somme
-    /// les scalaires à la place.)
+    /// Couleurs franches et joyeuses, façon cartoon.
     static let avatarPalette: [Color] = [
         Color(red: 1.000, green: 0.420, blue: 0.420),   // corail
         Color(red: 0.298, green: 0.788, blue: 0.941),   // ciel
@@ -52,40 +73,19 @@ enum Theme {
         Color(red: 0.176, green: 0.831, blue: 0.749),   // turquoise
     ]
 
-    static func avatarColor(for name: String) -> Color {
+    /// La position à table garantit des couleurs toutes distinctes jusqu'à
+    /// 8 joueurs ; le repli par somme de scalaires couvre les noms hors table
+    /// (`String.hashValue` est aléatoire à chaque lancement, inutilisable).
+    static func avatarColor(for name: String, table: [String] = []) -> Color {
+        if let index = table.firstIndex(of: name) {
+            return avatarPalette[index % avatarPalette.count]
+        }
         let sum = name.unicodeScalars.reduce(0) { $0 &+ Int($1.value) }
         return avatarPalette[sum % avatarPalette.count]
     }
 
-    static let ink = Color.white
-    static let inkMuted = Color.white.opacity(0.62)
-    static let inkFaint = Color.white.opacity(0.38)
-
-    static let surface = Color.white.opacity(0.07)
-    static let surfaceStrong = Color.white.opacity(0.12)
-    static let hairline = Color.white.opacity(0.14)
-
-    /// Dégradé de fond, commun à tous les écrans.
-    static var backdrop: LinearGradient {
-        LinearGradient(
-            colors: [night, nightDeep],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
-
-    /// Couleur associée à un rôle, pour les révélations.
-    static func color(for role: Role) -> Color {
-        switch role {
-        case .civilian: return mint
-        case .undercover: return brandLight
-        case .mrWhite: return amber
-        }
-    }
-
     // MARK: Typographie
 
-    /// Titres : arrondis et gras, l'identité d'un jeu de société.
     static func title(_ size: CGFloat = 30) -> Font {
         .system(size: size, weight: .heavy, design: .rounded)
     }
@@ -106,19 +106,93 @@ enum Theme {
 
     static let radius: CGFloat = 18
     static let radiusLarge: CGFloat = 26
-    static let cardRatio: CGFloat = 0.68   // largeur / hauteur d'une carte
+    static let cardRatio: CGFloat = 0.68
     static let touchTarget: CGFloat = 44
     static let gutter: CGFloat = 20
+    /// Épaisseur des contours encrés.
+    static let stroke: CGFloat = 2.5
+    /// Décalage vertical de l'ombre franche (le « carton » sous les cartes).
+    static let drop: CGFloat = 5
 
     // MARK: Animations
 
-    /// Ressort standard : réactif, sans rebond mou. Utilisé pour toutes les
-    /// transitions d'écran et apparitions.
     static let spring = Animation.spring(response: 0.42, dampingFraction: 0.82)
-    /// Ressort court pour les retours tactiles (appui, sélection).
     static let snap = Animation.spring(response: 0.28, dampingFraction: 0.75)
-    /// Retournement de carte : lent au début, net à la fin.
     static let flip = Animation.spring(response: 0.55, dampingFraction: 0.78)
+}
+
+// MARK: - Les deux peaux
+
+/// Jour = papier crème (discussion, vote). Nuit = encre sombre (secrets,
+/// révélations). Tout est opaque : aucun matériau translucide.
+enum Skin {
+    case day
+    case night
+
+    /// Fond d'écran.
+    var background: Color {
+        switch self {
+        case .day: return Color(red: 0.984, green: 0.953, blue: 0.894)
+        case .night: return Theme.night
+        }
+    }
+
+    /// Fond des cartes et panneaux.
+    var panel: Color {
+        switch self {
+        case .day: return .white
+        case .night: return Color(red: 0.133, green: 0.157, blue: 0.341)
+        }
+    }
+
+    /// Remplissage discret (lignes au repos, fonds de puces).
+    var panelSoft: Color {
+        switch self {
+        case .day: return Color(red: 0.949, green: 0.914, blue: 0.847)
+        case .night: return Color(red: 0.106, green: 0.125, blue: 0.282)
+        }
+    }
+
+    /// Remplissage appuyé (boutons secondaires, compteurs).
+    var panelStrong: Color {
+        switch self {
+        case .day: return Color(red: 0.914, green: 0.871, blue: 0.784)
+        case .night: return Color(red: 0.165, green: 0.192, blue: 0.400)
+        }
+    }
+
+    /// Le trait : contours, ombres franches.
+    var outline: Color {
+        switch self {
+        case .day: return Color(red: 0.133, green: 0.118, blue: 0.200)
+        case .night: return Theme.nightDeep
+        }
+    }
+
+    /// Texte principal.
+    var ink: Color {
+        switch self {
+        case .day: return Color(red: 0.133, green: 0.118, blue: 0.200)
+        case .night: return .white
+        }
+    }
+
+    var inkMuted: Color { ink.opacity(self == .day ? 0.60 : 0.65) }
+    var inkFaint: Color { ink.opacity(0.38) }
+    var hairline: Color { ink.opacity(0.15) }
+
+    var colorScheme: ColorScheme { self == .day ? .light : .dark }
+}
+
+private struct SkinKey: EnvironmentKey {
+    static let defaultValue: Skin = .night
+}
+
+extension EnvironmentValues {
+    var skin: Skin {
+        get { self[SkinKey.self] }
+        set { self[SkinKey.self] = newValue }
+    }
 }
 
 // MARK: - Retours haptiques
@@ -153,30 +227,70 @@ enum Haptics {
 
 // MARK: - Fond commun
 
-/// Fond dégradé + halos colorés, posé sous chaque écran. Le halo principal
-/// prend la couleur de la phase en cours : l'ambiance change avec le jeu.
+/// Fond à plat + confettis géométriques discrets aux couleurs de la phase.
+/// Aucun flou : des formes dessinées, comme un plateau de jeu.
 struct Backdrop: View {
+    var skin: Skin = .night
     var accent: Color = Theme.brand
 
     var body: some View {
         ZStack {
-            Theme.backdrop
-            Circle()
-                .fill(accent.opacity(0.30))
-                .frame(width: 420, height: 420)
-                .blur(radius: 130)
-                .offset(x: -110, y: -260)
-            Circle()
-                .fill(accent.opacity(0.16))
-                .frame(width: 340, height: 340)
-                .blur(radius: 120)
-                .offset(x: 150, y: 330)
+            skin.background
+
+            // Confettis : déterministes (pas de scintillement au re-render).
+            GeometryReader { geo in
+                let w = geo.size.width
+                let h = geo.size.height
+
+                Circle()
+                    .strokeBorder(accent.opacity(0.14), lineWidth: 3)
+                    .frame(width: 90, height: 90)
+                    .position(x: w * 0.12, y: h * 0.10)
+                Circle()
+                    .fill(accent.opacity(0.10))
+                    .frame(width: 26, height: 26)
+                    .position(x: w * 0.88, y: h * 0.16)
+                TriangleShape()
+                    .fill(accent.opacity(0.12))
+                    .frame(width: 34, height: 30)
+                    .rotationEffect(.degrees(18))
+                    .position(x: w * 0.82, y: h * 0.78)
+                Circle()
+                    .strokeBorder(accent.opacity(0.10), lineWidth: 3)
+                    .frame(width: 54, height: 54)
+                    .position(x: w * 0.10, y: h * 0.86)
+                PlusShape()
+                    .fill(accent.opacity(0.12))
+                    .frame(width: 22, height: 22)
+                    .rotationEffect(.degrees(12))
+                    .position(x: w * 0.50, y: h * 0.94)
+            }
         }
         .allowsHitTesting(false)
         .ignoresSafeArea()
-        .animation(.easeInOut(duration: 0.8), value: accentKey)
+        .animation(.easeInOut(duration: 0.6), value: skin == .day)
     }
+}
 
-    /// Color n'est pas Equatable au sens utile : on anime sur sa description.
-    private var accentKey: String { accent.description }
+/// Petit triangle plein, pour les confettis du fond.
+struct TriangleShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// Petite croix pleine, pour les confettis du fond.
+struct PlusShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let t = rect.width / 3
+        var path = Path()
+        path.addRect(CGRect(x: rect.minX + t, y: rect.minY, width: t, height: rect.height))
+        path.addRect(CGRect(x: rect.minX, y: rect.minY + t, width: rect.width, height: t))
+        return path
+    }
 }

@@ -9,7 +9,6 @@ struct MythoApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(session)
-                .preferredColorScheme(.dark)
                 // Le téléphone circule autour de la table et reste posé pendant
                 // les discussions : sans ça, l'écran se verrouille en pleine manche.
                 .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
@@ -26,7 +25,7 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            Backdrop(accent: Theme.accent(for: session.engine?.phase))
+            Backdrop(skin: currentSkin, accent: Theme.accent(for: session.engine?.phase))
 
             Group {
                 if let engine = session.engine {
@@ -62,9 +61,23 @@ struct RootView: View {
                 .zIndex(1)
             }
         }
+        .environment(\.skin, currentSkin)
+        .preferredColorScheme(currentSkin.colorScheme)
         .animation(Theme.snap, value: confirmQuit)
         .statusBarHidden(session.engine != nil)
         .persistentSystemOverlays(session.engine != nil ? .hidden : .automatic)
+    }
+
+
+    /// Le jour on discute (papier), la nuit on révèle (encre) : la peau suit
+    /// la phase. Validé par Arthur le 4 août 2026 (reco mixte).
+    private var currentSkin: Skin {
+        switch session.engine?.phase {
+        case nil, .describing, .voting:
+            return .day
+        case .dealing, .elimination, .avengerStrike, .mrWhiteGuess, .finished:
+            return .night
+        }
     }
 
     /// Sortie de secours : composition ratée, joueur qui s'en va, téléphone
@@ -82,10 +95,14 @@ struct RootView: View {
                 Text("Quitter")
                     .font(Theme.caption(13))
             }
-            .foregroundStyle(Theme.inkMuted)
+            .foregroundStyle(currentSkin.inkMuted)
             .padding(.horizontal, 13)
             .frame(height: Theme.touchTarget)
-            .background(Capsule().fill(Theme.surface))
+            .background(
+                Capsule()
+                    .fill(currentSkin.panel)
+                    .overlay(Capsule().strokeBorder(currentSkin.outline, lineWidth: 2))
+            )
         }
         .buttonStyle(PressedStyle())
         .accessibilityLabel("Quitter la partie")
@@ -104,10 +121,14 @@ struct RootView: View {
                 Text("Retour")
                     .font(Theme.caption(13))
             }
-            .foregroundStyle(Theme.inkMuted)
+            .foregroundStyle(currentSkin.inkMuted)
             .padding(.horizontal, 13)
             .frame(height: Theme.touchTarget)
-            .background(Capsule().fill(Theme.surface))
+            .background(
+                Capsule()
+                    .fill(currentSkin.panel)
+                    .overlay(Capsule().strokeBorder(currentSkin.outline, lineWidth: 2))
+            )
         }
         .buttonStyle(PressedStyle())
         .accessibilityLabel("Revenir à l'étape précédente")
@@ -167,6 +188,7 @@ struct RootView: View {
 /// le seul point net de l'écran, et un libellé qui dit exactement ce qui va
 /// se passer.
 private struct QuitConfirmOverlay: View {
+    @Environment(\.skin) private var skin
     let onQuit: () -> Void
     let onCancel: () -> Void
 
@@ -186,10 +208,10 @@ private struct QuitConfirmOverlay: View {
                 VStack(spacing: 8) {
                     Text("Arrêter la partie ?")
                         .font(Theme.heading(21))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(skin.ink)
                     Text("La manche en cours sera abandonnée et vous reviendrez au menu principal. Le classement est conservé.")
                         .font(Theme.body(14))
-                        .foregroundStyle(Theme.inkMuted)
+                        .foregroundStyle(skin.inkMuted)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -202,12 +224,12 @@ private struct QuitConfirmOverlay: View {
             .padding(22)
             .background(
                 RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
-                    .fill(Theme.night)
+                    .fill(skin.panel)
                     .overlay(
                         RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
-                            .strokeBorder(Theme.hairline, lineWidth: 1)
+                            .strokeBorder(skin.outline, lineWidth: Theme.stroke)
                     )
-                    .shadow(color: .black.opacity(0.5), radius: 30, y: 14)
+                    .shadow(color: skin.outline, radius: 0, y: Theme.drop)
             )
             .padding(.horizontal, 34)
         }

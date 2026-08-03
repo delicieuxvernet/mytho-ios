@@ -5,6 +5,8 @@ import SwiftUI
 /// Ordre de parole du tour. Le joueur en cours est sous le projecteur, avec un
 /// chrono : ça rythme la table et personne ne se demande à qui c'est.
 struct DescribeView: View {
+    @Environment(\.skin) private var skin
+
     @EnvironmentObject private var session: GameSession
     let engine: GameEngine
     let round: Int
@@ -21,7 +23,7 @@ struct DescribeView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            PhasePill(text: "Tour \(round)", tint: Theme.sky)
+            PhasePill(text: "Tour \(round)", tint: Theme.sky, darkText: true)
                 .padding(.top, 6)
 
             if everyoneSpoke {
@@ -38,7 +40,8 @@ struct DescribeView: View {
                             name: player.name,
                             isCurrent: index == currentSpeaker,
                             isDone: index < currentSpeaker,
-                            isMime: player.id == engine.mimePlayerID
+                            isMime: player.id == engine.mimePlayerID,
+                            table: engine.players.map(\.name)
                         ) {
                             Haptics.tap()
                             withAnimation(Theme.spring) { jump(to: index) }
@@ -52,7 +55,7 @@ struct DescribeView: View {
                             systemImage: TableRule.ghosts.symbol
                         )
                         .font(Theme.caption(13))
-                        .foregroundStyle(Theme.inkMuted)
+                        .foregroundStyle(skin.inkMuted)
                         .padding(.top, 6)
                     }
                 }
@@ -95,19 +98,19 @@ struct DescribeView: View {
     private var spotlightCard: some View {
         Panel(padding: 18) {
             HStack(spacing: 16) {
-                AvatarView(name: currentName, size: 52)
+                AvatarView(name: currentName, size: 52, table: engine.players.map(\.name))
                 VStack(alignment: .leading, spacing: 4) {
                     Text("C'est à")
                         .font(Theme.body(14))
-                        .foregroundStyle(Theme.inkMuted)
+                        .foregroundStyle(skin.inkMuted)
                     Text(currentName)
                         .font(Theme.title(27))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(skin.ink)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                     Text(isMimeTurn ? "de mimer son mot, sans un bruit." : "de décrire son mot en une phrase.")
                         .font(Theme.body(14))
-                        .foregroundStyle(timeUp ? Theme.crimson : Theme.inkMuted)
+                        .foregroundStyle(timeUp ? Theme.crimson : skin.inkMuted)
                         .fixedSize(horizontal: false, vertical: true)
 
                     if timeUp {
@@ -131,7 +134,7 @@ struct DescribeView: View {
     private var countdownRing: some View {
         ZStack {
             Circle()
-                .stroke(Theme.surfaceStrong, lineWidth: 6)
+                .stroke(skin.panelStrong, lineWidth: 6)
             Circle()
                 .trim(from: 0, to: CGFloat(timeLeft) / CGFloat(max(1, timerSeconds)))
                 .stroke(
@@ -143,7 +146,7 @@ struct DescribeView: View {
 
             Text(timeUp ? "0" : "\(timeLeft)")
                 .font(Theme.heading(22))
-                .foregroundStyle(timeUp ? Theme.crimson : Theme.ink)
+                .foregroundStyle(timeUp ? Theme.crimson : skin.ink)
                 .contentTransition(.numericText(countsDown: true))
         }
         .frame(width: 66, height: 66)
@@ -160,10 +163,10 @@ struct DescribeView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Tout le monde a parlé")
                         .font(Theme.heading(18))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(skin.ink)
                     Text("Débattez à voix haute, puis passez au vote.")
                         .font(Theme.body(14))
-                        .foregroundStyle(Theme.inkMuted)
+                        .foregroundStyle(skin.inkMuted)
                 }
                 Spacer(minLength: 0)
             }
@@ -198,18 +201,21 @@ struct DescribeView: View {
 
 /// Ligne d'ordre de parole. Un appui coche le joueur qui vient de parler.
 private struct SpeakerRow: View {
+    @Environment(\.skin) private var skin
+
     let position: Int
     let name: String
     let isCurrent: Bool
     let isDone: Bool
     var isMime: Bool = false
+    var table: [String] = []
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
                 ZStack(alignment: .bottomTrailing) {
-                    AvatarView(name: name, size: 34, dimmed: isDone)
+                    AvatarView(name: name, size: 34, dimmed: isDone, table: table)
                     if isDone {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 13, weight: .black))
@@ -221,8 +227,8 @@ private struct SpeakerRow: View {
 
                 Text(name)
                     .font(Theme.body(17))
-                    .foregroundStyle(isDone ? Theme.inkFaint : Theme.ink)
-                    .strikethrough(isDone, color: Theme.inkFaint)
+                    .foregroundStyle(isDone ? skin.inkFaint : skin.ink)
+                    .strikethrough(isDone, color: skin.inkFaint)
                     .lineLimit(1)
 
                 Spacer(minLength: 6)
@@ -251,7 +257,7 @@ private struct SpeakerRow: View {
             .frame(height: 58)
             .background(
                 RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                    .fill(isCurrent ? Theme.surfaceStrong : Theme.surface)
+                    .fill(isCurrent ? skin.panelStrong : skin.panelSoft)
                     .overlay(
                         RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
                             .strokeBorder(isCurrent ? Theme.sky.opacity(0.6) : Color.clear, lineWidth: 1.5)
@@ -269,6 +275,8 @@ private struct SpeakerRow: View {
 /// Le groupe désigne le joueur à éliminer. Le décompte se fait à la table ;
 /// l'app n'enregistre que le verdict.
 struct VoteView: View {
+    @Environment(\.skin) private var skin
+
     @EnvironmentObject private var session: GameSession
     let engine: GameEngine
 
@@ -280,17 +288,17 @@ struct VoteView: View {
                 PhasePill(text: "Vote", tint: Theme.crimson)
                 Text("Qui éliminez-vous ?")
                     .font(Theme.heading(24))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
                 Text("Touchez le joueur désigné par la majorité.")
                     .font(Theme.body(14))
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
             }
             .padding(.top, 10)
 
             ScrollView {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                     ForEach(engine.alivePlayers) { player in
-                        VoteCard(name: player.name, isPending: pendingID == player.id) {
+                        VoteCard(name: player.name, isPending: pendingID == player.id, table: engine.players.map(\.name)) {
                             Haptics.warning()
                             withAnimation(Theme.snap) { pendingID = player.id }
                         }
@@ -306,7 +314,7 @@ struct VoteView: View {
                     systemImage: SpecialRole.justice.symbol
                 )
                 .font(Theme.caption(13))
-                .foregroundStyle(Theme.inkMuted)
+                .foregroundStyle(skin.inkMuted)
                 .padding(.horizontal, Theme.gutter)
             }
 
@@ -325,20 +333,23 @@ struct VoteView: View {
 }
 
 private struct VoteCard: View {
+    @Environment(\.skin) private var skin
+
     let name: String
     let isPending: Bool
+    var table: [String] = []
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                AvatarView(name: name, size: 40)
+                AvatarView(name: name, size: 40, table: table)
                     .overlay(
                         Circle().strokeBorder(isPending ? Theme.crimson : .clear, lineWidth: 2.5)
                     )
                 Text(name)
                     .font(Theme.body(16))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
@@ -346,10 +357,10 @@ private struct VoteCard: View {
             .frame(height: 96)
             .background(
                 RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                    .fill(isPending ? Theme.crimson.opacity(0.18) : Theme.surface)
+                    .fill(isPending ? Theme.crimson.opacity(0.18) : skin.panelSoft)
                     .overlay(
                         RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                            .strokeBorder(isPending ? Theme.crimson : Theme.hairline, lineWidth: isPending ? 2 : 1)
+                            .strokeBorder(isPending ? Theme.crimson : skin.hairline, lineWidth: isPending ? 2 : 1)
                     )
             )
         }
@@ -364,6 +375,8 @@ private struct VoteCard: View {
 /// Les rôles des joueurs tombés, dévoilés d'un coup. Plusieurs à la fois quand
 /// les Amoureux ou la Vengeuse entraînent quelqu'un dans leur chute.
 struct EliminationView: View {
+    @Environment(\.skin) private var skin
+
     @EnvironmentObject private var session: GameSession
     let engine: GameEngine
     let playerIDs: [UUID]
@@ -389,7 +402,7 @@ struct EliminationView: View {
                         Text(cascadeExplanation)
                             .font(Theme.caption(13))
                     }
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
                 }
             }
 
@@ -424,7 +437,7 @@ struct EliminationView: View {
                         Circle()
                             .fill(Theme.color(for: role).opacity(0.16))
                             .frame(width: big ? 132 : 84, height: big ? 132 : 84)
-                        AvatarView(name: player.name, size: big ? 92 : 58)
+                        AvatarView(name: player.name, size: big ? 92 : 58, table: engine.players.map(\.name))
                     }
                 }
                 .scaleEffect(appeared ? 1 : 0.6)
@@ -432,12 +445,12 @@ struct EliminationView: View {
                 VStack(spacing: big ? 6 : 3) {
                     Text(player.name)
                         .font(Theme.title(big ? 32 : 23))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(skin.ink)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.6)
                     Text("était")
                         .font(Theme.body(big ? 15 : 13))
-                        .foregroundStyle(Theme.inkMuted)
+                        .foregroundStyle(skin.inkMuted)
                     Text(role.displayName)
                         .font(Theme.title(big ? 28 : 20))
                         .foregroundStyle(Theme.color(for: role))
@@ -452,6 +465,8 @@ struct EliminationView: View {
 
 /// La Vengeuse éliminée désigne le joueur qu'elle emmène avec elle.
 struct AvengerStrikeView: View {
+    @Environment(\.skin) private var skin
+
     @EnvironmentObject private var session: GameSession
     let engine: GameEngine
     let avengerID: UUID
@@ -466,12 +481,12 @@ struct AvengerStrikeView: View {
                 PhasePill(text: "Vengeance", tint: Theme.crimson)
                 Text("\(avengerName) frappe en tombant")
                     .font(Theme.heading(23))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.7)
                 Text("La Vengeuse emmène un joueur avec elle. À elle de choisir.")
                     .font(Theme.body(14))
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 26)
             }
@@ -480,7 +495,7 @@ struct AvengerStrikeView: View {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                     ForEach(engine.alivePlayers) { player in
-                        VoteCard(name: player.name, isPending: pendingID == player.id) {
+                        VoteCard(name: player.name, isPending: pendingID == player.id, table: engine.players.map(\.name)) {
                             Haptics.warning()
                             withAnimation(Theme.snap) { pendingID = player.id }
                         }
@@ -508,6 +523,8 @@ struct AvengerStrikeView: View {
 
 /// Mr. White éliminé propose le mot des civils. S'il vise juste, il gagne seul.
 struct MrWhiteGuessView: View {
+    @Environment(\.skin) private var skin
+
     @EnvironmentObject private var session: GameSession
     let engine: GameEngine
     let playerID: UUID
@@ -526,24 +543,24 @@ struct MrWhiteGuessView: View {
                     .font(.system(size: 40, weight: .bold))
                     .foregroundStyle(Theme.amber)
 
-                PhasePill(text: "Dernière chance", tint: Theme.amber)
+                PhasePill(text: "Dernière chance", tint: Theme.amber, darkText: true)
 
                 Text("\(name) était Mr. White")
                     .font(Theme.heading(23))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.7)
 
                 Text("S'il devine le mot des civils, il gagne la manche à lui seul.")
                     .font(Theme.body(14))
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 26)
             }
 
             TextField("Le mot des civils", text: $guess)
                 .font(Theme.heading(20))
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(skin.ink)
                 .multilineTextAlignment(.center)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
@@ -554,7 +571,7 @@ struct MrWhiteGuessView: View {
                 .padding(.horizontal, 18)
                 .background(
                     RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                        .fill(Theme.surface)
+                        .fill(skin.panelSoft)
                         .overlay(
                             RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
                                 .strokeBorder(Theme.amber.opacity(0.5), lineWidth: 1.5)

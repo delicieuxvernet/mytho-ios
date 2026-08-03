@@ -4,6 +4,8 @@ import SwiftUI
 /// et découvre son mot. C'est le moment signature du jeu — l'animation de
 /// retournement doit être irréprochable.
 struct DealView: View {
+    @Environment(\.skin) private var skin
+
     @EnvironmentObject private var session: GameSession
     let engine: GameEngine
     let playerIndex: Int
@@ -44,7 +46,7 @@ struct DealView: View {
         VStack(spacing: 8) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Theme.surface)
+                    Capsule().fill(skin.panelSoft)
                     Capsule()
                         .fill(Theme.brand)
                         .frame(width: geo.size.width * progress)
@@ -54,7 +56,7 @@ struct DealView: View {
 
             Text("Carte \(playerIndex + 1) sur \(engine.players.count)")
                 .font(Theme.caption(12))
-                .foregroundStyle(Theme.inkFaint)
+                .foregroundStyle(skin.inkFaint)
         }
         .animation(Theme.spring, value: progress)
     }
@@ -72,14 +74,14 @@ struct DealView: View {
                 .foregroundStyle(Theme.brandLight)
 
             VStack(spacing: 8) {
-                AvatarView(name: player.name, size: 72)
+                AvatarView(name: player.name, size: 72, table: engine.players.map(\.name))
                     .padding(.bottom, 4)
                 Text("Passe le téléphone à")
                     .font(Theme.body(16))
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
                 Text(player.name)
                     .font(Theme.title(34))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.6)
                     .lineLimit(2)
@@ -105,10 +107,10 @@ struct DealView: View {
                 PhasePill(text: "Pioche")
                 Text("Choisis une carte")
                     .font(Theme.heading(22))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
                 Text("Personne ne sait ce qu'elle contient.")
                     .font(Theme.body(14))
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
             }
 
             LazyVGrid(columns: gridColumns, spacing: 10) {
@@ -169,7 +171,7 @@ struct DealView: View {
                             .foregroundStyle(Theme.amber)
                         Text(special.briefing)
                             .font(Theme.caption(13))
-                            .foregroundStyle(Theme.inkMuted)
+                            .foregroundStyle(skin.inkMuted)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -184,7 +186,7 @@ struct DealView: View {
             VStack(spacing: 10) {
                 Text("Retiens-le, puis passe au suivant.")
                     .font(Theme.body(14))
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
 
                 PrimaryButton(title: "C'est mémorisé", systemImage: "checkmark") {
                     session.advanceDealing()
@@ -201,6 +203,8 @@ struct DealView: View {
 /// Une carte face cachée dans le paquet. Un léger décalage d'angle par carte
 /// donne l'impression d'un vrai paquet posé sur la table.
 private struct CardBack: View {
+    @Environment(\.skin) private var skin
+
     let index: Int
     let isTaken: Bool
     let namespace: Namespace.ID
@@ -216,24 +220,16 @@ private struct CardBack: View {
         Button(action: action) {
             ZStack {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: isTaken
-                                ? [Theme.surface, Theme.surface]
-                                : [Theme.brand, Theme.brand.opacity(0.72)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(isTaken ? skin.panelSoft : Theme.brand)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(isTaken ? Theme.hairline : Color.white.opacity(0.22), lineWidth: 1)
+                            .strokeBorder(skin.outline, lineWidth: isTaken ? 2 : Theme.stroke)
                     )
-                    .shadow(color: .black.opacity(isTaken ? 0 : 0.32), radius: 8, y: 4)
+                    .shadow(color: isTaken ? .clear : skin.outline, radius: 0, y: 4)
 
                 Image(systemName: isTaken ? "checkmark" : "questionmark")
                     .font(.system(size: 18, weight: .black, design: .rounded))
-                    .foregroundStyle(isTaken ? Theme.inkFaint : .white.opacity(0.9))
+                    .foregroundStyle(isTaken ? skin.inkFaint : .white.opacity(0.9))
             }
             .aspectRatio(Theme.cardRatio, contentMode: .fit)
             .rotationEffect(.degrees(isTaken ? 0 : tilt))
@@ -279,6 +275,10 @@ private struct WordCard: View {
         RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
             .fill(Theme.brand)
             .overlay(
+                RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
+                    .strokeBorder(Theme.nightDeep, lineWidth: Theme.stroke)
+            )
+            .overlay(
                 Image(systemName: "questionmark")
                     .font(.system(size: 44, weight: .black, design: .rounded))
                     .foregroundStyle(.white.opacity(0.9))
@@ -321,6 +321,10 @@ private struct WordCard: View {
                     }
                 }
             )
-            .shadow(color: .black.opacity(0.4), radius: 24, y: 12)
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
+                    .strokeBorder(Theme.nightDeep, lineWidth: Theme.stroke)
+            )
+            .shadow(color: Theme.nightDeep, radius: 0, y: Theme.drop)
     }
 }

@@ -2,6 +2,8 @@ import SwiftUI
 
 /// Écran d'accueil : joueurs, composition, options, catégories.
 struct SetupView: View {
+    @Environment(\.skin) private var skin
+
     @EnvironmentObject private var session: GameSession
     @FocusState private var focusedField: Int?
     @State private var showAdvanced = false
@@ -33,7 +35,7 @@ struct SetupView: View {
             .padding(.bottom, 10)
             .background(
                 LinearGradient(
-                    colors: [Theme.nightDeep.opacity(0), Theme.nightDeep],
+                    colors: [skin.background.opacity(0), skin.background],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -57,10 +59,10 @@ struct SetupView: View {
         VStack(spacing: 6) {
             Text("Mytho")
                 .font(Theme.title(38))
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(skin.ink)
             Text("Un mot pour tous, sauf pour les infiltrés.")
                 .font(Theme.body(15))
-                .foregroundStyle(Theme.inkMuted)
+                .foregroundStyle(skin.inkMuted)
                 .multilineTextAlignment(.center)
 
             Button {
@@ -84,7 +86,7 @@ struct SetupView: View {
                 HStack {
                     Label("Joueurs", systemImage: "person.2.fill")
                         .font(Theme.heading(17))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(skin.ink)
                     Spacer()
                     Text("\(session.playerCount)")
                         .font(Theme.heading(17))
@@ -94,7 +96,7 @@ struct SetupView: View {
 
                 ForEach(Array(session.config.playerNames.enumerated()), id: \.offset) { index, _ in
                     HStack(spacing: 10) {
-                        AvatarView(name: session.config.playerNames[safe: index] ?? "?", size: 30)
+                        AvatarView(name: session.config.playerNames[safe: index] ?? "?", size: 30, table: session.config.playerNames)
 
                         TextField(
                             "Joueur \(index + 1)",
@@ -104,7 +106,7 @@ struct SetupView: View {
                             )
                         )
                         .font(Theme.body(16))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(skin.ink)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
                         .submitLabel(.next)
@@ -119,7 +121,7 @@ struct SetupView: View {
                             } label: {
                                 Image(systemName: "minus.circle.fill")
                                     .font(.system(size: 18))
-                                    .foregroundStyle(Theme.inkFaint)
+                                    .foregroundStyle(skin.inkFaint)
                                     .frame(width: Theme.touchTarget, height: Theme.touchTarget)
                             }
                             .buttonStyle(PressedStyle())
@@ -128,7 +130,7 @@ struct SetupView: View {
                     }
                     .padding(.vertical, 2)
                     .overlay(alignment: .bottom) {
-                        Rectangle().fill(Theme.hairline).frame(height: 0.5)
+                        Rectangle().fill(skin.hairline).frame(height: 0.5)
                     }
                 }
 
@@ -155,7 +157,7 @@ struct SetupView: View {
                 HStack {
                     Label("Composition", systemImage: "dial.medium.fill")
                         .font(Theme.heading(17))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(skin.ink)
                     Spacer()
                     Button("Suggérée") {
                         Haptics.tap()
@@ -189,7 +191,7 @@ struct SetupView: View {
 
                 Text(compositionSummary)
                     .font(Theme.caption(13))
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
             }
         }
     }
@@ -212,11 +214,11 @@ struct SetupView: View {
                 HStack {
                     Label("Thèmes", systemImage: "square.grid.2x2.fill")
                         .font(Theme.heading(17))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(skin.ink)
                     Spacer()
                     Text(session.config.categoryIDs.isEmpty ? "Tous" : "\(session.config.categoryIDs.count)")
                         .font(Theme.caption(13))
-                        .foregroundStyle(Theme.inkMuted)
+                        .foregroundStyle(skin.inkMuted)
                 }
 
                 FlowLayout(spacing: 8) {
@@ -259,11 +261,11 @@ struct SetupView: View {
                     HStack {
                         Label("Options avancées", systemImage: "slider.horizontal.3")
                             .font(Theme.heading(17))
-                            .foregroundStyle(Theme.ink)
+                            .foregroundStyle(skin.ink)
                         Spacer()
                         Image(systemName: "chevron.down")
                             .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Theme.inkMuted)
+                            .foregroundStyle(skin.inkMuted)
                             .rotationEffect(.degrees(showAdvanced ? 0 : -90))
                     }
                     .frame(height: Theme.touchTarget)
@@ -333,8 +335,8 @@ struct SetupView: View {
         HStack(spacing: 10) {
             Text(label)
                 .font(Theme.caption(12))
-                .foregroundStyle(Theme.inkFaint)
-            Rectangle().fill(Theme.hairline).frame(height: 0.5)
+                .foregroundStyle(skin.inkFaint)
+            Rectangle().fill(skin.hairline).frame(height: 0.5)
         }
         .padding(.top, 4)
     }
@@ -365,16 +367,16 @@ struct SetupView: View {
                 HStack {
                     Label("Classement", systemImage: "trophy.fill")
                         .font(Theme.heading(17))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(skin.ink)
                     Spacer()
                     Button("Remettre à zéro") {
                         Haptics.tap()
                         withAnimation(Theme.spring) { session.resetScores() }
                     }
                     .font(Theme.caption(13))
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
                 }
-                LeaderboardList(rows: session.leaderboard)
+                LeaderboardList(rows: session.leaderboard, table: session.config.playerNames)
             }
         }
     }
@@ -383,6 +385,8 @@ struct SetupView: View {
 // MARK: - Puce de catégorie
 
 private struct CategoryChip: View {
+    @Environment(\.skin) private var skin
+
     let category: WordCategory
     let isOn: Bool
     let action: () -> Void
@@ -395,15 +399,15 @@ private struct CategoryChip: View {
                 Text(category.name)
                     .font(Theme.caption(13))
             }
-            .foregroundStyle(isOn ? Theme.ink : Theme.inkFaint)
+            .foregroundStyle(isOn ? skin.ink : skin.inkFaint)
             .padding(.horizontal, 13)
             .frame(height: Theme.touchTarget)
             .background(
                 Capsule()
-                    .fill(isOn ? Theme.brand.opacity(0.32) : Theme.surface)
+                    .fill(isOn ? Theme.brand.opacity(0.32) : skin.panelSoft)
                     .overlay(
                         Capsule().strokeBorder(
-                            isOn ? Theme.brandLight.opacity(0.6) : Theme.hairline,
+                            isOn ? Theme.brandLight.opacity(0.6) : skin.hairline,
                             lineWidth: 1
                         )
                     )
@@ -417,30 +421,30 @@ private struct CategoryChip: View {
 // MARK: - Classement partagé
 
 struct LeaderboardList: View {
+    @Environment(\.skin) private var skin
+
     let rows: [(name: String, points: Int)]
+    var table: [String] = []
 
     var body: some View {
         VStack(spacing: 0) {
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 HStack {
-                    Text("\(index + 1)")
-                        .font(Theme.caption(13))
-                        .foregroundStyle(index == 0 ? Theme.amber : Theme.inkFaint)
-                        .frame(width: 22, alignment: .leading)
+                    AvatarView(name: row.name, size: 24, table: table)
                     Text(row.name)
                         .font(Theme.body(15))
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(skin.ink)
                         .lineLimit(1)
                     Spacer(minLength: 8)
                     Text("\(row.points) pts")
                         .font(Theme.heading(15))
-                        .foregroundStyle(index == 0 ? Theme.amber : Theme.inkMuted)
+                        .foregroundStyle(index == 0 ? Theme.amber : skin.inkMuted)
                         .contentTransition(.numericText())
                 }
                 .padding(.vertical, 9)
                 .overlay(alignment: .bottom) {
                     if index < rows.count - 1 {
-                        Rectangle().fill(Theme.hairline).frame(height: 0.5)
+                        Rectangle().fill(skin.hairline).frame(height: 0.5)
                     }
                 }
             }

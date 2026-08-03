@@ -3,12 +3,14 @@ import SwiftUI
 /// Règles du jeu, consultables avant de lancer une manche. Autour d'une table,
 /// il y a toujours quelqu'un qui n'a jamais joué.
 struct RulesView: View {
+    @Environment(\.skin) private var skin
+
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Backdrop()
+                Backdrop(skin: skin)
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
@@ -32,7 +34,7 @@ struct RulesView: View {
                         .foregroundStyle(Theme.brandLight)
                 }
             }
-            .toolbarBackground(Theme.night, for: .navigationBar)
+            .toolbarBackground(skin.background, for: .navigationBar)
         }
     }
 
@@ -40,7 +42,7 @@ struct RulesView: View {
         Panel {
             Text("Tout le monde reçoit le même mot secret — sauf les infiltrés. Chacun décrit son mot à tour de rôle, sans jamais le prononcer. Puis on vote pour éliminer celui qui sonne faux.")
                 .font(Theme.body(15))
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(skin.ink)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -50,7 +52,7 @@ struct RulesView: View {
             VStack(alignment: .leading, spacing: 14) {
                 Text("Les rôles")
                     .font(Theme.heading(17))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
 
                 roleRow(
                     .civilian,
@@ -82,7 +84,7 @@ struct RulesView: View {
                     .foregroundStyle(Theme.color(for: role))
                 Text(text)
                     .font(Theme.body(14))
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -93,7 +95,7 @@ struct RulesView: View {
             VStack(alignment: .leading, spacing: 14) {
                 Text("Le déroulé d'une manche")
                     .font(Theme.heading(17))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
 
                 step(1, "Distribution", "Le téléphone circule. Chacun pioche une carte et découvre son mot en secret.")
                 step(2, "Description", "Dans l'ordre affiché, chacun décrit son mot en une phrase. Trop précis, on se fait repérer par les infiltrés ; trop vague, on se fait accuser.")
@@ -114,10 +116,10 @@ struct RulesView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(Theme.body(15))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
                 Text(text)
                     .font(Theme.body(14))
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -128,11 +130,11 @@ struct RulesView: View {
             VStack(alignment: .leading, spacing: 14) {
                 Text("Pouvoirs et variantes")
                     .font(Theme.heading(17))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
 
                 Text("À activer dans les options avancées. Les pouvoirs sont tirés au sort en plus des rôles ; les variantes s'appliquent à toute la table.")
                     .font(Theme.caption(13))
-                    .foregroundStyle(Theme.inkFaint)
+                    .foregroundStyle(skin.inkFaint)
                     .fixedSize(horizontal: false, vertical: true)
 
                 ForEach(SpecialRole.allCases) { role in
@@ -157,10 +159,10 @@ struct RulesView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
                     .font(Theme.body(15))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
                 Text(text)
                     .font(Theme.body(14))
-                    .foregroundStyle(Theme.inkMuted)
+                    .foregroundStyle(skin.inkMuted)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -171,7 +173,7 @@ struct RulesView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Les points")
                     .font(Theme.heading(17))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
 
                 scoreRow("Chaque civil, si les civils gagnent", Score.civilianWin)
                 scoreRow("Un undercover qui survit", Score.undercoverSurvives)
@@ -180,7 +182,7 @@ struct RulesView: View {
 
                 Text("Les points se cumulent d'une manche à l'autre. Le classement se remet à zéro depuis l'écran d'accueil.")
                     .font(Theme.caption(13))
-                    .foregroundStyle(Theme.inkFaint)
+                    .foregroundStyle(skin.inkFaint)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 2)
             }
@@ -191,7 +193,7 @@ struct RulesView: View {
         HStack {
             Text(label)
                 .font(Theme.body(14))
-                .foregroundStyle(Theme.inkMuted)
+                .foregroundStyle(skin.inkMuted)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 10)
             Text("+\(points)")

@@ -3,6 +3,8 @@ import SwiftUI
 /// Fin de manche : le camp gagnant, les mots dévoilés, tous les rôles, et le
 /// classement cumulé mis à jour.
 struct ResultView: View {
+    @Environment(\.skin) private var skin
+
     @EnvironmentObject private var session: GameSession
     let engine: GameEngine
     let outcome: RoundOutcome
@@ -95,13 +97,13 @@ struct ResultView: View {
 
             Text(outcome.title)
                 .font(Theme.title(30))
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(skin.ink)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.7)
 
             Text(subtitle)
                 .font(Theme.body(15))
-                .foregroundStyle(Theme.inkMuted)
+                .foregroundStyle(skin.inkMuted)
                 .multilineTextAlignment(.center)
         }
         .opacity(appeared ? 1 : 0)
@@ -125,7 +127,7 @@ struct ResultView: View {
                 .foregroundStyle(tint)
             Text(word)
                 .font(Theme.heading(19))
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(skin.ink)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.6)
                 .lineLimit(2)
@@ -149,16 +151,16 @@ struct ResultView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Les rôles")
                     .font(Theme.heading(17))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(skin.ink)
                     .padding(.bottom, 10)
 
                 ForEach(Array(engine.players.enumerated()), id: \.element.id) { index, player in
                     HStack(spacing: 10) {
-                        AvatarView(name: player.name, size: 26, dimmed: !player.isAlive)
+                        AvatarView(name: player.name, size: 26, dimmed: !player.isAlive, table: engine.players.map(\.name))
                         Text(player.name)
                             .font(Theme.body(15))
-                            .foregroundStyle(player.isAlive ? Theme.ink : Theme.inkFaint)
-                            .strikethrough(!player.isAlive, color: Theme.inkFaint)
+                            .foregroundStyle(player.isAlive ? skin.ink : skin.inkFaint)
+                            .strikethrough(!player.isAlive, color: skin.inkFaint)
                             .lineLimit(1)
 
                         Spacer(minLength: 6)
@@ -182,7 +184,7 @@ struct ResultView: View {
                     .padding(.vertical, 8)
                     .overlay(alignment: .bottom) {
                         if index < engine.players.count - 1 {
-                            Rectangle().fill(Theme.hairline).frame(height: 0.5)
+                            Rectangle().fill(skin.hairline).frame(height: 0.5)
                         }
                     }
                 }
@@ -195,8 +197,8 @@ struct ResultView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Label("Classement", systemImage: "trophy.fill")
                     .font(Theme.heading(17))
-                    .foregroundStyle(Theme.ink)
-                LeaderboardList(rows: session.leaderboard)
+                    .foregroundStyle(skin.ink)
+                LeaderboardList(rows: session.leaderboard, table: engine.players.map(\.name))
             }
         }
     }
