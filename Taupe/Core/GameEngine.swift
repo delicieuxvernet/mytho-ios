@@ -28,6 +28,19 @@ struct GameEngine: Sendable {
     /// Points cumulés sur la manche qui vient de s'achever (vide avant la fin).
     private(set) var roundPoints: [UUID: Int] = [:]
 
+    /// Répartition des pouvoirs effectivement retenus pour cette manche.
+    private(set) var specialRoles: [SpecialRole: [UUID]] = [:]
+
+    /// Le duelliste tombé le premier, s'il y en a un.
+    private(set) var duelLoser: UUID?
+
+    /// Joueur qui doit mimer son mot à ce tour, si la variante est active.
+    private(set) var mimePlayerID: UUID?
+
+    /// Vengeuse en attente : elle a été révélée en même temps que Mr. White,
+    /// dont la dernière chance passe avant.
+    private var pendingAvenger: UUID?
+
     // MARK: Cycle de vie
 
     /// Prépare une manche : tire la paire de mots, constitue et mélange le paquet.
@@ -66,6 +79,19 @@ struct GameEngine: Sendable {
 
         self.speakingOrder = []
         self.phase = .dealing(playerIndex: 0)
+
+        // Les pouvoirs sont attribués aux joueurs, pas aux cartes : ils sont
+        // indépendants du rôle pioché, et un joueur peut être Civil ET Vengeuse.
+        let playable = SpecialRoleAssignment.playable(cfg.specialRoles, playerCount: cfg.playerCount)
+        self.config.specialRoles = playable
+        self.specialRoles = SpecialRoleAssignment.assign(playable, to: self.players, using: &generator)
+
+        for (role, ids) in self.specialRoles {
+            for id in ids {
+                guard let index = self.players.firstIndex(where: { $0.id == id }) else { continue }
+                self.players[index].specialRole = role
+            }
+        }
     }
 
     // MARK: Distribution
@@ -103,6 +129,11 @@ struct GameEngine: Sendable {
 
     private mutating func startRound(_ round: Int, using generator: inout some RandomNumberGenerator) {
         speakingOrder = makeSpeakingOrder(using: &generator)
+        // Mr. Meme désigne un mime différent à chaque tour. Mr. White en est
+        // exclu : mimer un mot qu'on n'a pas le trahirait immédiatement.
+        mimePlayerID = config.tableRules.contains(.mime)
+            ? players.filter { $0.isAlive && $0.role != .mrWhite }.randomElement(using: &generator)?.id
+            : nil
         phase = .describing(round: round)
     }
 
@@ -132,27 +163,77 @@ struct GameEngine: Sendable {
 
     /// Élimine un joueur et révèle son rôle. Le vote lui-même se fait à la table.
     mutating func eliminate(playerID: UUID) {
-        guard case .voting = phase,
-              let index = players.firstIndex(where: { $0.id == playerID }),
-              players[index].isAlive
-        else { return }
-
-        players[index].isAlive = false
-        phase = .elimination(playerID: playerID)
+        guard case .voting = phase else { return }
+        let fallen = applyElimination(of: playerID)
+        guard !fallen.isEmpty else { return }
+        phase = .elimination(playerIDs: fallen)
     }
 
-    /// Enchaîne après la révélation : soit Mr. White tente sa chance, soit on
-    /// vérifie les conditions de victoire.
-    mutating func resolveElimination(using generator: inout some RandomNumberGenerator) {
-        guard case .elimination(let playerID) = phase,
-              let player = players.first(where: { $0.id == playerID })
-        else { return }
+    /// Marque un joueur comme éliminé, en emportant son amoureux s'il en a un.
+    /// Retourne tous les joueurs tombés, dans l'ordre de révélation.
+    @discardableResult
+    private mutating func applyElimination(of playerID: UUID) -> [UUID] {
+        guard let index = players.firstIndex(where: { $0.id == playerID }),
+              players[index].isAlive
+        else { return [] }
 
-        if player.role == .mrWhite {
-            phase = .mrWhiteGuess(playerID: playerID)
-        } else {
-            continueOrFinish(using: &generator)
+        players[index].isAlive = false
+        recordDuelIfNeeded(players[index])
+        var fallen = [playerID]
+
+        // Les Amoureux tombent ensemble. Un seul niveau de propagation suffit :
+        // un joueur ne porte qu'un pouvoir, l'amoureux entraîné ne peut donc pas
+        // en entraîner un troisième.
+        if players[index].specialRole == .lovers {
+            for partner in players.indices
+            where players[partner].specialRole == .lovers
+                && players[partner].id != playerID
+                && players[partner].isAlive {
+                players[partner].isAlive = false
+                recordDuelIfNeeded(players[partner])
+                fallen.append(players[partner].id)
+            }
         }
+        return fallen
+    }
+
+    /// Le premier duelliste éliminé perd des points, son rival en gagne.
+    private mutating func recordDuelIfNeeded(_ player: Player) {
+        guard player.specialRole == .duelists, duelLoser == nil else { return }
+        duelLoser = player.id
+    }
+
+    /// Enchaîne après la révélation : Mr. White tente sa chance, la Vengeuse
+    /// frappe, ou l'on vérifie les conditions de victoire.
+    mutating func resolveElimination(using generator: inout some RandomNumberGenerator) {
+        guard case .elimination(let playerIDs) = phase else { return }
+        let fallen = playerIDs.compactMap { id in players.first { $0.id == id } }
+
+        // Mr. White d'abord : sa dernière chance peut clore la manche avant
+        // même que la Vengeuse ait à choisir sa victime.
+        if let white = fallen.first(where: { $0.role == .mrWhite }) {
+            pendingAvenger = fallen.first { $0.specialRole == .avenger }?.id
+            phase = .mrWhiteGuess(playerID: white.id)
+            return
+        }
+        if let avenger = fallen.first(where: { $0.specialRole == .avenger }), canAvengerStrike {
+            phase = .avengerStrike(playerID: avenger.id)
+            return
+        }
+        continueOrFinish(using: &generator)
+    }
+
+    /// La Vengeuse n'a de sens que s'il reste quelqu'un à emmener.
+    private var canAvengerStrike: Bool {
+        players.filter(\.isAlive).count >= 2
+    }
+
+    /// La Vengeuse éliminée désigne le joueur qu'elle emmène avec elle.
+    mutating func avengerStrikes(playerID: UUID, using generator: inout some RandomNumberGenerator) {
+        guard case .avengerStrike = phase else { return }
+        let fallen = applyElimination(of: playerID)
+        guard !fallen.isEmpty else { return }
+        phase = .elimination(playerIDs: fallen)
     }
 
     /// Mr. White éliminé propose un mot. Retourne `true` s'il a vu juste.
