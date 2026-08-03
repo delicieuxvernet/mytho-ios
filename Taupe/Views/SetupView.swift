@@ -290,11 +290,64 @@ struct SetupView: View {
                             subtitle: "Le nombre d'infiltrés change à chaque manche.",
                             isOn: $session.config.randomMode
                         )
+
+                        divider(label: "Pouvoirs (un joueur tiré au sort)")
+                        ForEach(SpecialRole.allCases) { role in
+                            let playable = session.playerCount >= role.minimumPlayers
+                            OptionToggle(
+                                title: role.displayName,
+                                subtitle: playable
+                                    ? role.summary
+                                    : "\(role.summary) Dès \(role.minimumPlayers) joueurs.",
+                                isOn: binding(for: role)
+                            )
+                            .disabled(!playable)
+                            .opacity(playable ? 1 : 0.45)
+                        }
+
+                        divider(label: "Variantes de table")
+                        ForEach(TableRule.allCases) { rule in
+                            OptionToggle(
+                                title: rule.displayName,
+                                subtitle: rule.summary,
+                                isOn: binding(for: rule)
+                            )
+                        }
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
         }
+    }
+
+    private func divider(label: String) -> some View {
+        HStack(spacing: 10) {
+            Text(label)
+                .font(Theme.caption(12))
+                .foregroundStyle(Theme.inkFaint)
+            Rectangle().fill(Theme.hairline).frame(height: 0.5)
+        }
+        .padding(.top, 4)
+    }
+
+    private func binding(for role: SpecialRole) -> Binding<Bool> {
+        Binding(
+            get: { session.config.specialRoles.contains(role) },
+            set: { isOn in
+                if isOn { session.config.specialRoles.insert(role) }
+                else { session.config.specialRoles.remove(role) }
+            }
+        )
+    }
+
+    private func binding(for rule: TableRule) -> Binding<Bool> {
+        Binding(
+            get: { session.config.tableRules.contains(rule) },
+            set: { isOn in
+                if isOn { session.config.tableRules.insert(rule) }
+                else { session.config.tableRules.remove(rule) }
+            }
+        )
     }
 
     private var leaderboardPanel: some View {

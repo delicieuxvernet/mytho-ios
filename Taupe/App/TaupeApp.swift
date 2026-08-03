@@ -97,8 +97,12 @@ struct RootView: View {
             VoteView(engine: engine)
                 .transition(.forward)
 
-        case .elimination(let playerID):
-            EliminationView(engine: engine, playerID: playerID)
+        case .elimination(let playerIDs):
+            EliminationView(engine: engine, playerIDs: playerIDs)
+                .transition(.reveal)
+
+        case .avengerStrike(let playerID):
+            AvengerStrikeView(engine: engine, avengerID: playerID)
                 .transition(.reveal)
 
         case .mrWhiteGuess(let playerID):
@@ -118,7 +122,8 @@ struct RootView: View {
         case .dealing(let index): return "deal-\(index)"
         case .describing(let round): return "describe-\(round)"
         case .voting: return "vote"
-        case .elimination(let id): return "elim-\(id)"
+        case .elimination(let ids): return "elim-\(ids.map(\.uuidString).joined())"
+        case .avengerStrike(let id): return "avenger-\(id)"
         case .mrWhiteGuess(let id): return "white-\(id)"
         case .finished: return "result"
         }

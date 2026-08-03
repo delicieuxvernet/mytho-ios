@@ -32,13 +32,25 @@ struct DescribeView: View {
                             position: index + 1,
                             name: player.name,
                             isCurrent: index == currentSpeaker,
-                            isDone: index < currentSpeaker
+                            isDone: index < currentSpeaker,
+                            isMime: player.id == engine.mimePlayerID
                         ) {
                             Haptics.tap()
                             withAnimation(Theme.spring) {
                                 currentSpeaker = index < currentSpeaker ? index : index + 1
                             }
                         }
+                    }
+
+                    if engine.config.tableRules.contains(.ghosts),
+                       engine.players.contains(where: { !$0.isAlive }) {
+                        Label(
+                            "Les fantômes participent aux discussions et aux votes.",
+                            systemImage: TableRule.ghosts.symbol
+                        )
+                        .font(Theme.caption(13))
+                        .foregroundStyle(Theme.inkMuted)
+                        .padding(.top, 6)
                     }
                 }
                 .padding(.horizontal, Theme.gutter)
@@ -60,6 +72,7 @@ private struct SpeakerRow: View {
     let name: String
     let isCurrent: Bool
     let isDone: Bool
+    var isMime: Bool = false
     let action: () -> Void
 
     var body: some View {
@@ -87,6 +100,20 @@ private struct SpeakerRow: View {
                     .lineLimit(1)
 
                 Spacer(minLength: 6)
+
+                if isMime {
+                    HStack(spacing: 4) {
+                        Image(systemName: TableRule.mime.symbol)
+                            .font(.system(size: 11, weight: .bold))
+                            .accessibilityHidden(true)
+                        Text("mime")
+                            .font(Theme.caption(12))
+                    }
+                    .foregroundStyle(Theme.amber)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(Theme.amber.opacity(0.16)))
+                }
 
                 if isCurrent {
                     Text("à toi")
@@ -147,6 +174,16 @@ struct VoteView: View {
                 .padding(.bottom, 12)
             }
 
+            if engine.config.specialRoles.contains(.justice) {
+                Label(
+                    "Égalité des votes ? La Déesse de la justice se révèle et tranche.",
+                    systemImage: SpecialRole.justice.symbol
+                )
+                .font(Theme.caption(13))
+                .foregroundStyle(Theme.inkMuted)
+                .padding(.horizontal, Theme.gutter)
+            }
+
             PrimaryButton(
                 title: pendingID == nil ? "Choisissez un joueur" : "Éliminer",
                 systemImage: "xmark.circle.fill",
@@ -197,47 +234,35 @@ private struct VoteCard: View {
 
 // MARK: - Révélation d'élimination
 
-/// Le rôle du joueur éliminé, dévoilé d'un coup.
+/// Les rôles des joueurs tombés, dévoilés d'un coup. Plusieurs à la fois quand
+/// les Amoureux ou la Vengeuse entraînent quelqu'un dans leur chute.
 struct EliminationView: View {
     @EnvironmentObject private var session: GameSession
     let engine: GameEngine
-    let playerID: UUID
+    let playerIDs: [UUID]
 
     @State private var appeared = false
 
-    private var player: Player? { engine.player(id: playerID) }
+    private var fallen: [Player] { playerIDs.compactMap { engine.player(id: $0) } }
 
     var body: some View {
         VStack(spacing: 28) {
             Spacer()
 
-            if let player, let role = player.role {
-                VStack(spacing: 18) {
-                    ZStack {
-                        Circle()
-                            .fill(Theme.color(for: role).opacity(0.16))
-                            .frame(width: 132, height: 132)
-                            .scaleEffect(appeared ? 1 : 0.6)
-                        Image(systemName: role.symbol)
-                            .font(.system(size: 46, weight: .bold))
-                            .foregroundStyle(Theme.color(for: role))
-                            .scaleEffect(appeared ? 1 : 0.4)
-                    }
+            VStack(spacing: 26) {
+                ForEach(fallen) { player in
+                    reveal(player, big: fallen.count == 1)
+                }
 
-                    VStack(spacing: 6) {
-                        Text(player.name)
-                            .font(Theme.title(32))
-                            .foregroundStyle(Theme.ink)
-                            .multilineTextAlignment(.center)
-                            .minimumScaleFactor(0.6)
-                        Text("était")
-                            .font(Theme.body(15))
-                            .foregroundStyle(Theme.inkMuted)
-                        Text(role.displayName)
-                            .font(Theme.title(28))
-                            .foregroundStyle(Theme.color(for: role))
+                if fallen.count > 1 {
+                    HStack(spacing: 6) {
+                        Image(systemName: SpecialRole.lovers.symbol)
+                            .font(.system(size: 12, weight: .bold))
+                            .accessibilityHidden(true)
+                        Text(cascadeExplanation)
+                            .font(Theme.caption(13))
                     }
-                    .opacity(appeared ? 1 : 0)
+                    .foregroundStyle(Theme.inkMuted)
                 }
             }
 
@@ -253,6 +278,101 @@ struct EliminationView: View {
             Haptics.impact(.heavy)
             withAnimation(Theme.flip) { appeared = true }
         }
+    }
+
+    private var cascadeExplanation: String {
+        fallen.contains { $0.specialRole == .lovers }
+            ? "Les Amoureux tombent ensemble."
+            : "Emporté par la Vengeuse."
+    }
+
+    @ViewBuilder
+    private func reveal(_ player: Player, big: Bool) -> some View {
+        if let role = player.role {
+            VStack(spacing: big ? 18 : 10) {
+                ZStack {
+                    Circle()
+                        .fill(Theme.color(for: role).opacity(0.16))
+                        .frame(width: big ? 132 : 84, height: big ? 132 : 84)
+                        .scaleEffect(appeared ? 1 : 0.6)
+                    Image(systemName: role.symbol)
+                        .font(.system(size: big ? 46 : 30, weight: .bold))
+                        .foregroundStyle(Theme.color(for: role))
+                        .scaleEffect(appeared ? 1 : 0.4)
+                }
+
+                VStack(spacing: big ? 6 : 3) {
+                    Text(player.name)
+                        .font(Theme.title(big ? 32 : 23))
+                        .foregroundStyle(Theme.ink)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.6)
+                    Text("était")
+                        .font(Theme.body(big ? 15 : 13))
+                        .foregroundStyle(Theme.inkMuted)
+                    Text(role.displayName)
+                        .font(Theme.title(big ? 28 : 20))
+                        .foregroundStyle(Theme.color(for: role))
+                }
+                .opacity(appeared ? 1 : 0)
+            }
+        }
+    }
+}
+
+// MARK: - Frappe de la Vengeuse
+
+/// La Vengeuse éliminée désigne le joueur qu'elle emmène avec elle.
+struct AvengerStrikeView: View {
+    @EnvironmentObject private var session: GameSession
+    let engine: GameEngine
+    let avengerID: UUID
+
+    @State private var pendingID: UUID?
+
+    private var avengerName: String { engine.player(id: avengerID)?.name ?? "La Vengeuse" }
+
+    var body: some View {
+        VStack(spacing: 18) {
+            VStack(spacing: 8) {
+                PhasePill(text: "Vengeance", tint: Theme.crimson)
+                Text("\(avengerName) frappe en tombant")
+                    .font(Theme.heading(23))
+                    .foregroundStyle(Theme.ink)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.7)
+                Text("La Vengeuse emmène un joueur avec elle. À elle de choisir.")
+                    .font(Theme.body(14))
+                    .foregroundStyle(Theme.inkMuted)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 26)
+            }
+            .padding(.top, 10)
+
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                    ForEach(engine.alivePlayers) { player in
+                        VoteCard(name: player.name, isPending: pendingID == player.id) {
+                            Haptics.warning()
+                            withAnimation(Theme.snap) { pendingID = player.id }
+                        }
+                    }
+                }
+                .padding(.horizontal, Theme.gutter)
+                .padding(.bottom, 12)
+            }
+
+            PrimaryButton(
+                title: pendingID == nil ? "Choisis ta cible" : "Emmener ce joueur",
+                systemImage: "bolt.fill",
+                tint: Theme.crimson,
+                isEnabled: pendingID != nil
+            ) {
+                if let pendingID { session.avengerStrikes(playerID: pendingID) }
+            }
+            .padding(.horizontal, Theme.gutter)
+        }
+        .padding(.bottom, 12)
     }
 }
 

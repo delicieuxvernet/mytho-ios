@@ -41,6 +41,9 @@ struct GameEngine: Sendable {
     /// dont la dernière chance passe avant.
     private var pendingAvenger: UUID?
 
+    /// Numéro du tour de description en cours.
+    private var roundNumber = 0
+
     // MARK: Cycle de vie
 
     /// Prépare une manche : tire la paire de mots, constitue et mélange le paquet.
@@ -128,6 +131,7 @@ struct GameEngine: Sendable {
     // MARK: Tours de description
 
     private mutating func startRound(_ round: Int, using generator: inout some RandomNumberGenerator) {
+        roundNumber = round
         speakingOrder = makeSpeakingOrder(using: &generator)
         // Mr. Meme désigne un mime différent à chaque tour. Mr. White en est
         // exclu : mimer un mot qu'on n'a pas le trahirait immédiatement.
@@ -245,6 +249,15 @@ struct GameEngine: Sendable {
             finish(.mrWhiteGuessedRight(playerID: playerID))
             return true
         }
+        // La Vengeuse tombée dans la même charrette frappe une fois la
+        // dernière chance de Mr. White consommée.
+        if let avenger = pendingAvenger {
+            pendingAvenger = nil
+            if canAvengerStrike {
+                phase = .avengerStrike(playerID: avenger)
+                return false
+            }
+        }
         continueOrFinish(using: &generator)
         return false
     }
@@ -284,24 +297,27 @@ struct GameEngine: Sendable {
             // Les infiltrés ne peuvent plus être mis en minorité.
             finish(.infiltratorsWin)
         } else {
-            let round = currentRound + 1
-            startRound(round, using: &generator)
+            // Le compteur explicite remplace l'ancienne déduction par nombre
+            // d'éliminés : les chutes en cascade (Amoureux, Vengeuse) faisaient
+            // sauter des numéros de tour à l'affichage.
+            startRound(roundNumber + 1, using: &generator)
         }
-    }
-
-    private var currentRound: Int {
-        if case .describing(let round) = phase { return round }
-        return roundsPlayed
-    }
-
-    /// Nombre de tours de description déjà joués, déduit des éliminations.
-    private var roundsPlayed: Int {
-        players.filter { !$0.isAlive }.count
     }
 
     private mutating func finish(_ outcome: RoundOutcome) {
         roundPoints = Self.points(for: outcome, players: players)
+        applyDuelPoints()
+        pendingAvenger = nil
         phase = .finished(outcome)
+    }
+
+    /// Le duel est un pari personnel, réglé quel que soit le camp gagnant :
+    /// le premier duelliste tombé paie, l'autre encaisse.
+    private mutating func applyDuelPoints() {
+        guard let loser = duelLoser, let duelists = specialRoles[.duelists] else { return }
+        for id in duelists {
+            roundPoints[id, default: 0] += id == loser ? DuelScore.loser : DuelScore.survivor
+        }
     }
 
     /// Barème : civils +2 chacun, undercover survivant +10, Mr. White +6

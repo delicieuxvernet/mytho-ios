@@ -166,6 +166,13 @@ final class GameSession: ObservableObject {
         commitPointsIfFinished()
     }
 
+    func avengerStrikes(playerID: UUID) {
+        guard var current = engine else { return }
+        var generator = SystemRandomNumberGenerator()
+        current.avengerStrikes(playerID: playerID, using: &generator)
+        engine = current
+    }
+
     @discardableResult
     func submitMrWhiteGuess(_ guess: String) -> Bool {
         guard var current = engine else { return false }
