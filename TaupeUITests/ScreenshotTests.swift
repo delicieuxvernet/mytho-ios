@@ -52,12 +52,51 @@ final class ScreenshotTests: XCTestCase {
         tap(firstCandidate, timeout: 5)
         tap(app.buttons["Éliminer"], timeout: 5)
         capture("elimination")
+
+        playUntilTheRoundEnds()
+        capture("fin-de-manche")
+    }
+
+    /// Enchaîne éliminations et tours jusqu'à ce qu'un camp gagne. Vérifie au
+    /// passage que la boucle de jeu se termine réellement sur un appareil, et
+    /// pas seulement dans les tests unitaires du moteur.
+    private func playUntilTheRoundEnds() {
+        // Cinq joueurs : la manche ne peut pas dépasser une poignée de tours.
+        for _ in 0..<12 {
+            if app.buttons["Nouvelle manche"].exists { return }
+
+            if app.buttons["Continuer"].exists {
+                app.buttons["Continuer"].tap()
+            } else if app.buttons["Il passe son tour"].exists {
+                // Mr. White démasqué : on le fait échouer pour que la manche continue.
+                app.buttons["Il passe son tour"].tap()
+            } else if app.buttons["Passer au vote"].exists {
+                app.buttons["Passer au vote"].tap()
+            } else if app.buttons["Éliminer"].exists {
+                app.buttons["Éliminer"].tap()
+            } else {
+                // Écran de vote : on choisit le premier joueur encore en lice.
+                let candidate = app.buttons.element(boundBy: 1)
+                if candidate.exists { candidate.tap() } else { break }
+            }
+            _ = app.buttons.firstMatch.waitForExistence(timeout: 3)
+        }
+
+        XCTAssertTrue(
+            app.buttons["Nouvelle manche"].waitForExistence(timeout: 5),
+            "La manche ne s'est jamais terminée après 12 actions"
+        )
     }
 
     // MARK: Outils
 
     /// Numérote les captures pour que l'ordre de lecture soit celui du jeu.
+    ///
+    /// L'attente n'est pas du confort : sans elle, chaque capture attrapait une
+    /// transition en cours (deux écrans superposés, carte pas encore retournée)
+    /// et ne permettait pas de juger le rendu réel.
     private func capture(_ name: String) {
+        Thread.sleep(forTimeInterval: 1.0)
         stepIndex += 1
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = String(format: "%02d-%@", stepIndex, name)

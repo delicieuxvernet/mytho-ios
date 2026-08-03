@@ -89,7 +89,10 @@ struct DealView: View {
             .padding(.horizontal, Theme.gutter)
         }
         .padding(.horizontal, Theme.gutter)
-        .transition(.reveal)
+        // Glissement plutôt que fondu : deux fondus superposés au même endroit
+        // donnaient un chevauchement fantôme des deux écrans (constaté sur les
+        // captures du 3 août 2026).
+        .transition(.forward)
     }
 
     // MARK: Pioche
@@ -119,7 +122,7 @@ struct DealView: View {
             }
             .padding(.horizontal, Theme.gutter)
         }
-        .transition(.reveal)
+        .transition(.forward)
     }
 
     private var gridColumns: [GridItem] {
