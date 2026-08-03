@@ -22,6 +22,7 @@ struct TaupeApp: App {
 /// Une seule source de vérité, donc aucun état de navigation à resynchroniser.
 struct RootView: View {
     @EnvironmentObject private var session: GameSession
+    @State private var confirmQuit = false
 
     var body: some View {
         ZStack {
@@ -36,9 +37,47 @@ struct RootView: View {
                 }
             }
             .animation(Theme.spring, value: transitionKey)
+            // Barre réservée en haut plutôt qu'un bouton en surimpression : sinon
+            // il recouvrirait la barre de progression de la distribution.
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if let engine = session.engine, !engine.isFinished {
+                    HStack {
+                        quitButton
+                        Spacer()
+                    }
+                    .padding(.horizontal, 8)
+                }
+            }
         }
         .statusBarHidden(session.engine != nil)
         .persistentSystemOverlays(session.engine != nil ? .hidden : .automatic)
+        .confirmationDialog(
+            "Abandonner la manche en cours ?",
+            isPresented: $confirmQuit,
+            titleVisibility: .visible
+        ) {
+            Button("Abandonner", role: .destructive) { session.backToSetup() }
+            Button("Continuer à jouer", role: .cancel) {}
+        } message: {
+            Text("Les mots et les rôles seront retirés. Le classement des manches précédentes est conservé.")
+        }
+    }
+
+    /// Sortie de secours : composition ratée, joueur qui s'en va, téléphone
+    /// passé au mauvais moment. Sans ça, la manche ne peut plus être quittée.
+    private var quitButton: some View {
+        Button {
+            Haptics.tap()
+            confirmQuit = true
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Theme.inkMuted)
+                .frame(width: Theme.touchTarget, height: Theme.touchTarget)
+                .background(Circle().fill(Theme.surface))
+        }
+        .buttonStyle(PressedStyle())
+        .accessibilityLabel("Abandonner la manche")
     }
 
     @ViewBuilder
