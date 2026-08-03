@@ -47,9 +47,8 @@ final class ScreenshotTests: XCTestCase {
         tap(app.buttons["Passer au vote"], timeout: 5)
         capture("vote")
 
-        // On élimine le premier joueur proposé.
-        let firstCandidate = app.buttons["Chloé"].exists ? app.buttons["Chloé"] : app.buttons.element(boundBy: 1)
-        tap(firstCandidate, timeout: 5)
+        // On élimine le premier joueur encore en lice.
+        tapAnyPlayerCard()
         tap(app.buttons["Éliminer"], timeout: 5)
         capture("elimination")
 
@@ -57,12 +56,30 @@ final class ScreenshotTests: XCTestCase {
         capture("fin-de-manche")
     }
 
+    /// Les prénoms du profil de test injecté par `-uiTesting`.
+    private static let testPlayers = ["Chloé", "Malik", "Inès", "Tom", "Sarah"]
+
+    /// Touche la carte de vote du premier joueur encore en lice, jamais un
+    /// bouton par index : lors du run 30810486415, `element(boundBy: 1)` avait
+    /// attrapé la croix d'abandon et ouvert la boîte de confirmation, laissant
+    /// la manche tourner à vide jusqu'au timeout.
+    private func tapAnyPlayerCard() {
+        for name in Self.testPlayers {
+            let card = app.buttons[name]
+            if card.exists && card.isHittable {
+                card.tap()
+                return
+            }
+        }
+        XCTFail("Aucune carte de joueur touchable sur l'écran de vote")
+    }
+
     /// Enchaîne éliminations et tours jusqu'à ce qu'un camp gagne. Vérifie au
     /// passage que la boucle de jeu se termine réellement sur un appareil, et
     /// pas seulement dans les tests unitaires du moteur.
     private func playUntilTheRoundEnds() {
-        // Cinq joueurs : la manche ne peut pas dépasser une poignée de tours.
-        for _ in 0..<12 {
+        // Cinq joueurs : au pire 4 éliminations de ~4 actions chacune.
+        for _ in 0..<20 {
             if app.buttons["Nouvelle manche"].exists { return }
 
             if app.buttons["Continuer"].exists {
@@ -75,16 +92,14 @@ final class ScreenshotTests: XCTestCase {
             } else if app.buttons["Éliminer"].exists {
                 app.buttons["Éliminer"].tap()
             } else {
-                // Écran de vote : on choisit le premier joueur encore en lice.
-                let candidate = app.buttons.element(boundBy: 1)
-                if candidate.exists { candidate.tap() } else { break }
+                tapAnyPlayerCard()
             }
             _ = app.buttons.firstMatch.waitForExistence(timeout: 3)
         }
 
         XCTAssertTrue(
             app.buttons["Nouvelle manche"].waitForExistence(timeout: 5),
-            "La manche ne s'est jamais terminée après 12 actions"
+            "La manche ne s'est jamais terminée après 20 actions"
         )
     }
 
