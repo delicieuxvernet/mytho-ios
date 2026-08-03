@@ -33,14 +33,17 @@ $ErrorActionPreference = 'Stop'
 if (-not (Test-Path $P8)) { throw "Fichier introuvable : $P8" }
 if ([System.IO.Path]::GetExtension($P8) -ne '.p8') { throw "Le fichier doit etre un .p8 : $P8" }
 
-# La cle est encodee en base64 puis transmise a gh via stdin : elle ne transite
-# ni par la ligne de commande (visible dans l'historique) ni par l'ecran.
+# La cle est encodee en base64 et transmise via --body : jamais affichee.
+# /!\ Ne PAS piper les valeurs a gh via `|` : le pipeline PowerShell ajoute un
+# retour a la ligne final, qui corrompt le Key ID dans le JWT -> l'API Apple
+# repond « Authentication credentials are missing or invalid » (vecu 3 aout 2026,
+# run 30854396897).
 $bytes = [System.IO.File]::ReadAllBytes($P8)
 $b64 = [System.Convert]::ToBase64String($bytes)
 
-$b64      | gh secret set ASC_API_KEY_BASE64 --repo $Repo
-$KeyId    | gh secret set ASC_KEY_ID         --repo $Repo
-$IssuerId | gh secret set ASC_ISSUER_ID      --repo $Repo
+gh secret set ASC_API_KEY_BASE64 --repo $Repo --body $b64
+gh secret set ASC_KEY_ID         --repo $Repo --body $KeyId
+gh secret set ASC_ISSUER_ID      --repo $Repo --body $IssuerId
 
 Write-Host ""
 Write-Host "  Secrets App Store Connect poses sur $Repo" -ForegroundColor Green
