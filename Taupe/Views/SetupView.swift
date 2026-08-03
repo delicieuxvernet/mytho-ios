@@ -5,6 +5,7 @@ struct SetupView: View {
     @EnvironmentObject private var session: GameSession
     @FocusState private var focusedField: Int?
     @State private var showAdvanced = false
+    @State private var showRules = false
 
     var body: some View {
         ScrollView {
@@ -47,6 +48,7 @@ struct SetupView: View {
                     .font(Theme.body(16))
             }
         }
+        .sheet(isPresented: $showRules) { RulesView() }
     }
 
     // MARK: Sections
@@ -60,8 +62,20 @@ struct SetupView: View {
                 .font(Theme.body(15))
                 .foregroundStyle(Theme.inkMuted)
                 .multilineTextAlignment(.center)
+
+            Button {
+                Haptics.tap()
+                showRules = true
+            } label: {
+                Label("Comment jouer", systemImage: "questionmark.circle.fill")
+                    .font(Theme.caption(14))
+                    .foregroundStyle(Theme.brandLight)
+                    .padding(.horizontal, 14)
+                    .frame(height: Theme.touchTarget)
+            }
+            .buttonStyle(PressedStyle())
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, 4)
     }
 
     private var playersPanel: some View {

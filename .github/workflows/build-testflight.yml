@@ -55,10 +55,31 @@ jobs:
           path: ${{ runner.temp }}/TestResults.xcresult
           if-no-files-found: warn
 
+  # ── La clé App Store Connect est-elle en place ? ───────────────────────────
+  # Le contexte `secrets` n'est pas lisible depuis un `if:` de job : on passe par
+  # un job qui expose la réponse en sortie. Tant que la clé manque, l'envoi
+  # TestFlight est sauté proprement au lieu de faire échouer chaque push.
+  signing-ready:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          MATCH_SSH_PRIVATE_KEY: ${{ secrets.MATCH_SSH_PRIVATE_KEY }}
+        run: |
+          if [ -n "$ASC_KEY_ID" ] && [ -n "$MATCH_SSH_PRIVATE_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Secrets de signature incomplets — envoi TestFlight sauté. Voir scripts/setup-asc-secrets.ps1"
+          fi
+
   # ── Build + envoi TestFlight (pushes sur main uniquement) ─────────────────
   build-and-upload:
-    if: github.event_name != 'pull_request'
-    needs: tests
+    if: github.event_name != 'pull_request' && needs.signing-ready.outputs.ready == 'true'
+    needs: [tests, signing-ready]
     runs-on: macos-15
     timeout-minutes: 45
 
