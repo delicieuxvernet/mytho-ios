@@ -21,7 +21,7 @@ struct DescribeView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            PhasePill(text: "Tour \(round)")
+            PhasePill(text: "Tour \(round)", tint: Theme.sky)
                 .padding(.top, 6)
 
             if everyoneSpoke {
@@ -67,7 +67,7 @@ struct DescribeView: View {
                 .padding(.horizontal, Theme.gutter)
             } else {
                 VStack(spacing: 2) {
-                    PrimaryButton(title: "Joueur suivant", systemImage: "arrow.right") {
+                    PrimaryButton(title: "Joueur suivant", systemImage: "arrow.right", tint: Theme.sky, foreground: Theme.nightDeep) {
                         withAnimation(Theme.spring) { jump(to: currentSpeaker + 1) }
                     }
                     GhostButton(title: "Passer directement au vote", systemImage: "hand.raised.fill") {
@@ -95,6 +95,7 @@ struct DescribeView: View {
     private var spotlightCard: some View {
         Panel(padding: 18) {
             HStack(spacing: 16) {
+                AvatarView(name: currentName, size: 52)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("C'est à")
                         .font(Theme.body(14))
@@ -134,7 +135,7 @@ struct DescribeView: View {
             Circle()
                 .trim(from: 0, to: CGFloat(timeLeft) / CGFloat(max(1, timerSeconds)))
                 .stroke(
-                    timeUp ? Theme.crimson : (timeLeft <= 5 ? Theme.amber : Theme.brandLight),
+                    timeUp ? Theme.crimson : (timeLeft <= 5 ? Theme.amber : Theme.sky),
                     style: StrokeStyle(lineWidth: 6, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
@@ -207,20 +208,16 @@ private struct SpeakerRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(isDone ? Theme.mint.opacity(0.22) : (isCurrent ? Theme.brand : Theme.surfaceStrong))
+                ZStack(alignment: .bottomTrailing) {
+                    AvatarView(name: name, size: 34, dimmed: isDone)
                     if isDone {
-                        Image(systemName: "checkmark")
+                        Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 13, weight: .black))
                             .foregroundStyle(Theme.mint)
-                    } else {
-                        Text("\(position)")
-                            .font(Theme.heading(15))
-                            .foregroundStyle(isCurrent ? .white : Theme.inkMuted)
+                            .background(Circle().fill(Theme.night))
+                            .accessibilityHidden(true)
                     }
                 }
-                .frame(width: 34, height: 34)
 
                 Text(name)
                     .font(Theme.body(17))
@@ -247,7 +244,7 @@ private struct SpeakerRow: View {
                 if isCurrent {
                     Text("à toi")
                         .font(Theme.caption(12))
-                        .foregroundStyle(Theme.brandLight)
+                        .foregroundStyle(Theme.sky)
                 }
             }
             .padding(.horizontal, 14)
@@ -257,7 +254,7 @@ private struct SpeakerRow: View {
                     .fill(isCurrent ? Theme.surfaceStrong : Theme.surface)
                     .overlay(
                         RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                            .strokeBorder(isCurrent ? Theme.brandLight.opacity(0.5) : Color.clear, lineWidth: 1.5)
+                            .strokeBorder(isCurrent ? Theme.sky.opacity(0.6) : Color.clear, lineWidth: 1.5)
                     )
             )
         }
@@ -335,9 +332,10 @@ private struct VoteCard: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                Image(systemName: "person.fill")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(isPending ? Theme.crimson : Theme.inkMuted)
+                AvatarView(name: name, size: 40)
+                    .overlay(
+                        Circle().strokeBorder(isPending ? Theme.crimson : .clear, lineWidth: 2.5)
+                    )
                 Text(name)
                     .font(Theme.body(16))
                     .foregroundStyle(Theme.ink)
@@ -420,15 +418,16 @@ struct EliminationView: View {
         if let role = player.role {
             VStack(spacing: big ? 18 : 10) {
                 ZStack {
-                    Circle()
-                        .fill(Theme.color(for: role).opacity(0.16))
-                        .frame(width: big ? 132 : 84, height: big ? 132 : 84)
-                        .scaleEffect(appeared ? 1 : 0.6)
-                    Image(systemName: role.symbol)
-                        .font(.system(size: big ? 46 : 30, weight: .bold))
-                        .foregroundStyle(Theme.color(for: role))
-                        .scaleEffect(appeared ? 1 : 0.4)
+                    if role.isInfiltrator {
+                        ReptileEyeView(size: big ? 132 : 84, blinking: big)
+                    } else {
+                        Circle()
+                            .fill(Theme.color(for: role).opacity(0.16))
+                            .frame(width: big ? 132 : 84, height: big ? 132 : 84)
+                        AvatarView(name: player.name, size: big ? 92 : 58)
+                    }
                 }
+                .scaleEffect(appeared ? 1 : 0.6)
 
                 VStack(spacing: big ? 6 : 3) {
                     Text(player.name)

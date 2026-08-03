@@ -7,6 +7,9 @@ struct PrimaryButton: View {
     let title: String
     var systemImage: String?
     var tint: Color = Theme.brand
+    /// À passer en sombre sur les teintes claires (ambre, ciel, menthe) :
+    /// le blanc n'y tient pas le contraste.
+    var foreground: Color = .white
     var isEnabled: Bool = true
     let action: () -> Void
 
@@ -26,12 +29,24 @@ struct PrimaryButton: View {
                 Text(title)
                     .font(Theme.heading(18))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(foreground)
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background(
                 RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                    .fill(tint)
+                    .fill(
+                        // Léger dégradé diagonal : le bouton prend du volume
+                        // sans changer de couleur perçue.
+                        LinearGradient(
+                            colors: [tint, tint.opacity(0.78)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                            .strokeBorder(.white.opacity(0.18), lineWidth: 1)
+                    )
                     .shadow(color: tint.opacity(0.45), radius: 18, y: 8)
             )
         }
@@ -213,6 +228,88 @@ struct RoleBadge: View {
         .padding(.horizontal, compact ? 9 : 12)
         .padding(.vertical, compact ? 5 : 7)
         .background(Capsule().fill(Theme.color(for: role).opacity(0.16)))
+    }
+}
+
+// MARK: - Avatars
+
+/// Pastille colorée + initiale, façon cartoon. La couleur est déterminée par
+/// le nom : un joueur garde son avatar partout et d'une manche à l'autre.
+struct AvatarView: View {
+    let name: String
+    var size: CGFloat = 34
+    var dimmed: Bool = false
+
+    private var initial: String {
+        String(name.trimmingCharacters(in: .whitespaces).prefix(1)).uppercased()
+    }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Theme.avatarColor(for: name))
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [.white.opacity(0.28), .clear],
+                        startPoint: .topLeading,
+                        endPoint: .center
+                    )
+                )
+            Text(initial.isEmpty ? "?" : initial)
+                .font(.system(size: size * 0.44, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white)
+        }
+        .frame(width: size, height: size)
+        .saturation(dimmed ? 0.15 : 1)
+        .opacity(dimmed ? 0.55 : 1)
+        .accessibilityHidden(true)
+    }
+}
+
+// MARK: - L'œil reptilien
+
+/// La signature des infiltrés : un œil vert à pupille fendue, validé par
+/// Arthur comme identité visuelle de Mytho. Vectoriel : net à toutes tailles.
+struct ReptileEyeView: View {
+    var size: CGFloat = 120
+    var blinking: Bool = false
+
+    @State private var pupilScale: CGFloat = 1
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color(red: 0.070, green: 0.230, blue: 0.165))
+            Circle()
+                .strokeBorder(Theme.mint, lineWidth: max(2, size * 0.028))
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color(red: 0.487, green: 0.910, blue: 0.722), Theme.mint],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: size * 0.62, height: size * 0.62)
+            Ellipse()
+                .fill(Color(red: 0.016, green: 0.082, blue: 0.051))
+                .frame(width: size * 0.13, height: size * 0.50)
+                .scaleEffect(y: pupilScale)
+            Ellipse()
+                .fill(.white.opacity(0.50))
+                .frame(width: size * 0.11, height: size * 0.07)
+                .offset(x: -size * 0.08, y: -size * 0.13)
+        }
+        .frame(width: size, height: size)
+        .onAppear {
+            guard blinking, !UIAccessibility.isReduceMotionEnabled else { return }
+            // Un clignement lent : vivant sans être agité.
+            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
+                pupilScale = 0.82
+            }
+        }
+        .accessibilityLabel("Œil d'infiltré")
     }
 }
 

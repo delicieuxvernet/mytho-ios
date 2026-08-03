@@ -94,10 +94,7 @@ struct SetupView: View {
 
                 ForEach(Array(session.config.playerNames.enumerated()), id: \.offset) { index, _ in
                     HStack(spacing: 10) {
-                        Text("\(index + 1)")
-                            .font(Theme.caption(13))
-                            .foregroundStyle(Theme.inkFaint)
-                            .frame(width: 20, alignment: .leading)
+                        AvatarView(name: session.config.playerNames[safe: index] ?? "?", size: 30)
 
                         TextField(
                             "Joueur \(index + 1)",

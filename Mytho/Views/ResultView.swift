@@ -50,6 +50,14 @@ struct ResultView: View {
         }
     }
 
+    /// Les victoires d'infiltrés portent la signature de la maison : l'œil.
+    private var isInfiltratorWin: Bool {
+        switch outcome {
+        case .infiltratorsWin, .mrWhiteGuessedRight: return true
+        case .civiliansWin: return false
+        }
+    }
+
     private var symbol: String {
         switch outcome {
         case .civiliansWin: return "person.3.fill"
@@ -72,12 +80,16 @@ struct ResultView: View {
     private var banner: some View {
         VStack(spacing: 14) {
             ZStack {
-                Circle()
-                    .fill(accent.opacity(0.16))
-                    .frame(width: 116, height: 116)
-                Image(systemName: symbol)
-                    .font(.system(size: 42, weight: .bold))
-                    .foregroundStyle(accent)
+                if isInfiltratorWin {
+                    ReptileEyeView(size: 116, blinking: true)
+                } else {
+                    Circle()
+                        .fill(accent.opacity(0.16))
+                        .frame(width: 116, height: 116)
+                    Image(systemName: symbol)
+                        .font(.system(size: 42, weight: .bold))
+                        .foregroundStyle(accent)
+                }
             }
             .scaleEffect(appeared ? 1 : 0.5)
 
@@ -142,6 +154,7 @@ struct ResultView: View {
 
                 ForEach(Array(engine.players.enumerated()), id: \.element.id) { index, player in
                     HStack(spacing: 10) {
+                        AvatarView(name: player.name, size: 26, dimmed: !player.isAlive)
                         Text(player.name)
                             .font(Theme.body(15))
                             .foregroundStyle(player.isAlive ? Theme.ink : Theme.inkFaint)

@@ -13,12 +13,49 @@ enum Theme {
     /// Violet de marque, sur les actions principales.
     static let brand = Color(red: 0.400, green: 0.353, blue: 0.906)
     static let brandLight = Color(red: 0.576, green: 0.537, blue: 0.976)
-    /// Ambre : Mr. White, alertes, dernière chance.
+    /// Ambre : Mr. White, alertes, dernière chance, révélations.
     static let amber = Color(red: 0.976, green: 0.702, blue: 0.263)
-    /// Vert : victoire des civils.
+    /// Vert : les infiltrés et leurs victoires — la couleur de l'œil reptilien.
     static let mint = Color(red: 0.204, green: 0.827, blue: 0.600)
-    /// Rouge : élimination.
+    /// Rouge corail : vote et élimination.
     static let crimson = Color(red: 0.937, green: 0.325, blue: 0.365)
+    /// Bleu ciel : la phase de description.
+    static let sky = Color(red: 0.298, green: 0.788, blue: 0.941)
+
+    /// Chaque phase du jeu a sa température : c'est ce qui donne le rythme
+    /// d'une app de soirée sans quitter la base nuit.
+    static func accent(for phase: GamePhase?) -> Color {
+        switch phase {
+        case .dealing: return brand
+        case .describing: return sky
+        case .voting: return crimson
+        case .elimination, .avengerStrike, .mrWhiteGuess: return amber
+        case .finished: return mint
+        case nil: return brand
+        }
+    }
+
+    // MARK: Avatars
+
+    /// Couleurs franches et joyeuses, façon cartoon. L'attribution par nom est
+    /// déterministe : un joueur garde son avatar d'un écran et d'une manche à
+    /// l'autre. (`String.hashValue` est aléatoire à chaque lancement — on somme
+    /// les scalaires à la place.)
+    static let avatarPalette: [Color] = [
+        Color(red: 1.000, green: 0.420, blue: 0.420),   // corail
+        Color(red: 0.298, green: 0.788, blue: 0.941),   // ciel
+        Color(red: 1.000, green: 0.757, blue: 0.271),   // ambre
+        Color(red: 0.204, green: 0.827, blue: 0.600),   // menthe
+        Color(red: 0.957, green: 0.447, blue: 0.714),   // rose
+        Color(red: 0.545, green: 0.361, blue: 0.965),   // violet
+        Color(red: 0.984, green: 0.573, blue: 0.235),   // orange
+        Color(red: 0.176, green: 0.831, blue: 0.749),   // turquoise
+    ]
+
+    static func avatarColor(for name: String) -> Color {
+        let sum = name.unicodeScalars.reduce(0) { $0 &+ Int($1.value) }
+        return avatarPalette[sum % avatarPalette.count]
+    }
 
     static let ink = Color.white
     static let inkMuted = Color.white.opacity(0.62)
@@ -116,18 +153,30 @@ enum Haptics {
 
 // MARK: - Fond commun
 
-/// Fond dégradé + halo de marque, posé sous chaque écran.
+/// Fond dégradé + halos colorés, posé sous chaque écran. Le halo principal
+/// prend la couleur de la phase en cours : l'ambiance change avec le jeu.
 struct Backdrop: View {
+    var accent: Color = Theme.brand
+
     var body: some View {
         ZStack {
             Theme.backdrop
             Circle()
-                .fill(Theme.brand.opacity(0.28))
+                .fill(accent.opacity(0.30))
                 .frame(width: 420, height: 420)
                 .blur(radius: 130)
                 .offset(x: -110, y: -260)
-                .allowsHitTesting(false)
+            Circle()
+                .fill(accent.opacity(0.16))
+                .frame(width: 340, height: 340)
+                .blur(radius: 120)
+                .offset(x: 150, y: 330)
         }
+        .allowsHitTesting(false)
         .ignoresSafeArea()
+        .animation(.easeInOut(duration: 0.8), value: accentKey)
     }
+
+    /// Color n'est pas Equatable au sens utile : on anime sur sa description.
+    private var accentKey: String { accent.description }
 }

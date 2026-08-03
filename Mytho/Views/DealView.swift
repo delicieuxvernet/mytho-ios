@@ -72,6 +72,8 @@ struct DealView: View {
                 .foregroundStyle(Theme.brandLight)
 
             VStack(spacing: 8) {
+                AvatarView(name: player.name, size: 72)
+                    .padding(.bottom, 4)
                 Text("Passe le téléphone à")
                     .font(Theme.body(16))
                     .foregroundStyle(Theme.inkMuted)

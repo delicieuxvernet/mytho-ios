@@ -26,7 +26,7 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            Backdrop()
+            Backdrop(accent: Theme.accent(for: session.engine?.phase))
 
             Group {
                 if let engine = session.engine {
