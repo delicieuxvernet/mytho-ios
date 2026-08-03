@@ -34,6 +34,49 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
+      # Coder « name:iPhone 16 » en dur rend le job flaky : selon l'image du
+      # runner, ce modèle peut ne pas exister, ou la liste des simulateurs peut
+      # être carrément vide (observé le 3 août 2026, run 30809250901). On résout
+      # donc un UDID concret, quitte à créer le simulateur.
+      - name: Resolve an iPhone simulator
+        id: sim
+        run: |
+          set -euo pipefail
+          UDID=$(xcrun simctl list devices available --json | python3 -c "
+import json, sys
+devices = json.load(sys.stdin)['devices']
+for runtime, entries in devices.items():
+    if 'iOS' not in runtime:
+        continue
+    for device in entries:
+        if device.get('isAvailable') and device['name'].startswith('iPhone'):
+            print(device['udid'])
+            sys.exit(0)
+")
+          if [ -z "$UDID" ]; then
+            echo "Aucun simulateur iPhone instancié — création."
+            RUNTIME=$(xcrun simctl list runtimes --json | python3 -c "
+import json, sys
+runtimes = [r['identifier'] for r in json.load(sys.stdin)['runtimes']
+            if r.get('isAvailable') and 'iOS' in r['identifier']]
+print(runtimes[-1] if runtimes else '')
+")
+            DEVTYPE=$(xcrun simctl list devicetypes --json | python3 -c "
+import json, sys
+types = [d['identifier'] for d in json.load(sys.stdin)['devicetypes']
+         if d['name'].startswith('iPhone')]
+print(types[-1] if types else '')
+")
+            if [ -z "$RUNTIME" ] || [ -z "$DEVTYPE" ]; then
+              echo '::error::Aucun runtime iOS utilisable sur ce runner.'
+              xcrun simctl list runtimes
+              exit 1
+            fi
+            UDID=$(xcrun simctl create ci-iphone "$DEVTYPE" "$RUNTIME")
+          fi
+          echo "Simulateur retenu : $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
       - name: Run tests
         timeout-minutes: 20
         run: |
@@ -41,7 +84,7 @@ jobs:
           xcodebuild test \
             -project Taupe.xcodeproj \
             -scheme Taupe \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
             -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
             -test-timeouts-enabled YES \
             -default-test-execution-time-allowance 120 \
