@@ -106,6 +106,8 @@ private struct SpeakerRow: View {
             )
         }
         .buttonStyle(PressedStyle())
+        .accessibilityLabel("\(position). \(name)")
+        .accessibilityValue(isDone ? "a parlé" : (isCurrent ? "à son tour" : "en attente"))
     }
 }
 
@@ -188,6 +190,7 @@ private struct VoteCard: View {
             )
         }
         .buttonStyle(PressedStyle())
+        .accessibilityLabel(name)
         .accessibilityAddTraits(isPending ? [.isSelected] : [])
     }
 }

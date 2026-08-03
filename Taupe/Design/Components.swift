@@ -19,6 +19,9 @@ struct PrimaryButton: View {
                 if let systemImage {
                     Image(systemName: systemImage)
                         .font(.system(size: 17, weight: .bold))
+                        // Purement décoratif : sans ça VoiceOver annonce le nom
+                        // du symbole avant le libellé du bouton.
+                        .accessibilityHidden(true)
                 }
                 Text(title)
                     .font(Theme.heading(18))
@@ -51,7 +54,9 @@ struct GhostButton: View {
         } label: {
             HStack(spacing: 8) {
                 if let systemImage {
-                    Image(systemName: systemImage).font(.system(size: 15, weight: .semibold))
+                    Image(systemName: systemImage)
+                        .font(.system(size: 15, weight: .semibold))
+                        .accessibilityHidden(true)
                 }
                 Text(title).font(Theme.body(16))
             }
