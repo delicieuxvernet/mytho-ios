@@ -1,0 +1,79 @@
+name: Captures d'écran
+
+# Rejoue une manche complète sur simulateur et publie les PNG en artefact.
+# Déclenchement manuel uniquement : les tests d'interface sont lents et ne
+# doivent jamais bloquer un déploiement.
+#   gh workflow run screenshots.yml --repo delicieuxvernet/taupe-ios
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: macos-15
+    timeout-minutes: 40
+
+    env:
+      LC_ALL: en_US.UTF-8
+      LANG: en_US.UTF-8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26.2
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+
+      - name: Install XcodeGen & xcparse
+        run: |
+          brew install xcodegen
+          brew install chargepoint/xcparse/xcparse
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Resolve an iPhone simulator
+        id: sim
+        run: |
+          set -euo pipefail
+          UDID=$(xcrun simctl list devices available --json | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.isAvailable and (.name | startswith("iPhone"))) | .udid] | first // empty')
+          if [ -z "$UDID" ]; then
+            RUNTIME=$(xcrun simctl list runtimes --json | jq -r '[.runtimes[] | select(.isAvailable and (.identifier | contains("iOS"))) | .identifier] | last // empty')
+            DEVTYPE=$(xcrun simctl list devicetypes --json | jq -r '[.devicetypes[] | select(.name | startswith("iPhone")) | .identifier] | last // empty')
+            if [ -z "$RUNTIME" ] || [ -z "$DEVTYPE" ]; then
+              echo '::error::Aucun runtime iOS utilisable sur ce runner.'
+              exit 1
+            fi
+            UDID=$(xcrun simctl create ci-iphone "$DEVTYPE" "$RUNTIME")
+          fi
+          echo "Simulateur retenu : $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Rejouer une manche et capturer
+        timeout-minutes: 25
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Taupe.xcodeproj \
+            -scheme TaupeScreenshots \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath "$RUNNER_TEMP/Screenshots.xcresult" \
+            -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 180 \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Les captures sont attachées au bundle de résultats : xcparse les en
+      # extrait sous forme de PNG lisibles hors de Xcode.
+      - name: Extraire les PNG
+        if: always()
+        run: |
+          mkdir -p screenshots
+          xcparse screenshots --test "$RUNNER_TEMP/Screenshots.xcresult" screenshots || true
+          ls -la screenshots || true
+
+      - name: Publier les captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: captures-taupe
+          path: screenshots
+          if-no-files-found: warn

@@ -42,31 +42,11 @@ jobs:
         id: sim
         run: |
           set -euo pipefail
-          UDID=$(xcrun simctl list devices available --json | python3 -c "
-import json, sys
-devices = json.load(sys.stdin)['devices']
-for runtime, entries in devices.items():
-    if 'iOS' not in runtime:
-        continue
-    for device in entries:
-        if device.get('isAvailable') and device['name'].startswith('iPhone'):
-            print(device['udid'])
-            sys.exit(0)
-")
+          UDID=$(xcrun simctl list devices available --json | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.isAvailable and (.name | startswith("iPhone"))) | .udid] | first // empty')
           if [ -z "$UDID" ]; then
             echo "Aucun simulateur iPhone instancié — création."
-            RUNTIME=$(xcrun simctl list runtimes --json | python3 -c "
-import json, sys
-runtimes = [r['identifier'] for r in json.load(sys.stdin)['runtimes']
-            if r.get('isAvailable') and 'iOS' in r['identifier']]
-print(runtimes[-1] if runtimes else '')
-")
-            DEVTYPE=$(xcrun simctl list devicetypes --json | python3 -c "
-import json, sys
-types = [d['identifier'] for d in json.load(sys.stdin)['devicetypes']
-         if d['name'].startswith('iPhone')]
-print(types[-1] if types else '')
-")
+            RUNTIME=$(xcrun simctl list runtimes --json | jq -r '[.runtimes[] | select(.isAvailable and (.identifier | contains("iOS"))) | .identifier] | last // empty')
+            DEVTYPE=$(xcrun simctl list devicetypes --json | jq -r '[.devicetypes[] | select(.name | startswith("iPhone")) | .identifier] | last // empty')
             if [ -z "$RUNTIME" ] || [ -z "$DEVTYPE" ]; then
               echo '::error::Aucun runtime iOS utilisable sur ce runner.'
               xcrun simctl list runtimes

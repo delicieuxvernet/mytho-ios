@@ -27,13 +27,17 @@ final class GameSession: ObservableObject {
     private let recentPairMemory = 30
 
     init() {
-        let saved = Persistence.loadConfig()
+        // Les captures d'écran automatisées doivent partir d'un état propre,
+        // quel que soit ce qu'une exécution précédente a laissé sur le simulateur.
+        let fresh = ProcessInfo.processInfo.arguments.contains("-uiTesting")
+        let saved = fresh ? nil : Persistence.loadConfig()
+
         self.config = saved ?? GameConfig(
-            playerNames: ["Joueur 1", "Joueur 2", "Joueur 3", "Joueur 4", "Joueur 5"],
+            playerNames: ["Chloé", "Malik", "Inès", "Tom", "Sarah"],
             undercoverCount: 1,
             mrWhiteCount: 1
         )
-        self.totalScores = Persistence.loadScores()
+        self.totalScores = fresh ? [:] : Persistence.loadScores()
     }
 
     // MARK: Composition

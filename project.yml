@@ -82,6 +82,24 @@ targets:
     dependencies:
       - target: Taupe
 
+  # Captures d'écran uniquement — jamais dans la gate de déploiement : les tests
+  # d'interface sont lents et sujets aux faux négatifs.
+  TaupeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: TaupeUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.taupe.app.uitests
+        PRODUCT_NAME: TaupeUITests
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Taupe
+    dependencies:
+      - target: Taupe
+
 schemes:
   Taupe:
     build:
@@ -99,3 +117,15 @@ schemes:
       config: Debug
     archive:
       config: Release
+
+  # Scheme séparé : le scheme Taupe reste sur les seuls tests unitaires, rapides
+  # et déterministes, puisque c'est lui qui garde le déploiement.
+  TaupeScreenshots:
+    build:
+      targets:
+        Taupe: all
+        TaupeUITests: [test]
+    test:
+      config: Debug
+      targets:
+        - TaupeUITests
