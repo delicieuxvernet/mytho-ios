@@ -1,4 +1,4 @@
-# Taupe
+# Mytho
 
 Jeu de société de déduction pour 3 à 20 joueurs, sur un seul iPhone qu'on se
 passe autour de la table. Tout le monde reçoit le même mot — sauf les infiltrés.
@@ -15,13 +15,13 @@ cumulent d'une manche à l'autre (civil +2, undercover survivant +10, Mr. White 
 ## Architecture
 
 ```
-Taupe/
-├── App/            TaupeApp.swift, RootView (aiguillage par phase de jeu)
+Mytho/
+├── App/            MythoApp.swift, RootView (aiguillage par phase de jeu)
 ├── Core/           GameModels, GameEngine (logique pure), GameSession, WordBank
 ├── Design/         Theme (couleurs, typo, animations), Components
 ├── Views/          SetupView, DealView, PlayViews, ResultView
 └── Resources/      Info.plist, Assets.xcassets
-TaupeTests/         Moteur, composition, banque de mots
+MythoTests/         Moteur, composition, banque de mots
 ```
 
 Le moteur (`GameEngine`) est une **valeur pure** : aucun accès réseau, aucun
@@ -37,7 +37,7 @@ Aucune dépendance externe : le jeu tourne hors ligne et les builds restent rapi
 Le projet Xcode n'est pas versionné — `project.yml` est la source de vérité.
 
 ```bash
-xcodegen generate && open Taupe.xcodeproj
+xcodegen generate && open Mytho.xcodeproj
 ```
 
 Régénérer l'icône (Windows, sans Xcode) :

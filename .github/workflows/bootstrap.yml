@@ -5,7 +5,7 @@ name: Bootstrap (premier run — certificats + profil)
 # les stocke chiffrés dans le dépôt de certificats (MATCH_GIT_URL).
 #
 # À faire AVANT, à la main (une clé API ne peut pas créer ces ressources) :
-#   - App ID `fr.taupe.app` sur developer.apple.com
+#   - App ID `fr.mytho.app` sur developer.apple.com
 #   - Fiche app sur appstoreconnect.apple.com
 on:
   workflow_dispatch:

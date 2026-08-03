@@ -1,7 +1,7 @@
-name: Taupe
+name: Mytho
 
 options:
-  bundleIdPrefix: fr.taupe
+  bundleIdPrefix: fr.mytho
   deploymentTarget:
     iOS: "17.0"
   developmentLanguage: fr
@@ -25,7 +25,7 @@ settings:
     Debug:
       SWIFT_OPTIMIZATION_LEVEL: "-Onone"
       ONLY_ACTIVE_ARCH: YES
-      # Requis par `@testable import Taupe` dans la suite de tests.
+      # Requis par `@testable import Mytho` dans la suite de tests.
       ENABLE_TESTABILITY: YES
     Release:
       SWIFT_OPTIMIZATION_LEVEL: "-O"
@@ -34,19 +34,19 @@ settings:
 # et il n'y a aucun SDK tiers à faire signer en CI.
 
 targets:
-  Taupe:
+  Mytho:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
     sources:
-      - path: Taupe
+      - path: Mytho
         excludes:
           - "Resources/Info.plist"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: fr.taupe.app
-        PRODUCT_NAME: Taupe
-        INFOPLIST_FILE: Taupe/Resources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: fr.mytho.app
+        PRODUCT_NAME: Mytho
+        INFOPLIST_FILE: Mytho/Resources/Info.plist
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: D87R3L7B75
         CURRENT_PROJECT_VERSION: 1
@@ -63,54 +63,54 @@ targets:
           # l'archive si des paquets SPM étaient ajoutés plus tard.
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
-          PROVISIONING_PROFILE_SPECIFIER: "match AppStore fr.taupe.app"
+          PROVISIONING_PROFILE_SPECIFIER: "match AppStore fr.mytho.app"
 
-  TaupeTests:
+  MythoTests:
     type: bundle.unit-test
     platform: iOS
     deploymentTarget: "17.0"
     sources:
-      - path: TaupeTests
+      - path: MythoTests
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: fr.taupe.app.tests
-        PRODUCT_NAME: TaupeTests
+        PRODUCT_BUNDLE_IDENTIFIER: fr.mytho.app.tests
+        PRODUCT_NAME: MythoTests
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
         BUNDLE_LOADER: "$(TEST_HOST)"
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Taupe.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Taupe"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Mytho.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Mytho"
     dependencies:
-      - target: Taupe
+      - target: Mytho
 
   # Captures d'écran uniquement — jamais dans la gate de déploiement : les tests
   # d'interface sont lents et sujets aux faux négatifs.
-  TaupeUITests:
+  MythoUITests:
     type: bundle.ui-testing
     platform: iOS
     deploymentTarget: "17.0"
     sources:
-      - path: TaupeUITests
+      - path: MythoUITests
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: fr.taupe.app.uitests
-        PRODUCT_NAME: TaupeUITests
+        PRODUCT_BUNDLE_IDENTIFIER: fr.mytho.app.uitests
+        PRODUCT_NAME: MythoUITests
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
-        TEST_TARGET_NAME: Taupe
+        TEST_TARGET_NAME: Mytho
     dependencies:
-      - target: Taupe
+      - target: Mytho
 
 schemes:
-  Taupe:
+  Mytho:
     build:
       targets:
-        Taupe: all
+        Mytho: all
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - TaupeTests
+        - MythoTests
     profile:
       config: Release
     analyze:
@@ -118,14 +118,14 @@ schemes:
     archive:
       config: Release
 
-  # Scheme séparé : le scheme Taupe reste sur les seuls tests unitaires, rapides
+  # Scheme séparé : le scheme Mytho reste sur les seuls tests unitaires, rapides
   # et déterministes, puisque c'est lui qui garde le déploiement.
-  TaupeScreenshots:
+  MythoScreenshots:
     build:
       targets:
-        Taupe: all
-        TaupeUITests: [test]
+        Mytho: all
+        MythoUITests: [test]
     test:
       config: Debug
       targets:
-        - TaupeUITests
+        - MythoUITests

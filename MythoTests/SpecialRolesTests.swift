@@ -1,5 +1,5 @@
 import XCTest
-@testable import Taupe
+@testable import Mytho
 
 /// Les pouvoirs modifient l'élimination — la mécanique la plus sensible du
 /// moteur. Chaque règle est vérifiée sur le flux réel, pas sur des raccourcis.

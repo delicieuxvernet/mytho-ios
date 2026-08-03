@@ -225,8 +225,8 @@ final class GameSession: ObservableObject {
 /// jamais l'état d'une manche en cours (le téléphone circule, une manche
 /// interrompue se rejoue).
 enum Persistence {
-    private static let configKey = "taupe.config"
-    private static let scoresKey = "taupe.scores"
+    private static let configKey = "mytho.config"
+    private static let scoresKey = "mytho.scores"
 
     static func save(config: GameConfig) {
         guard let data = try? JSONEncoder().encode(config) else { return }

@@ -55,7 +55,7 @@ struct SetupView: View {
 
     private var header: some View {
         VStack(spacing: 6) {
-            Text("Taupe")
+            Text("Mytho")
                 .font(Theme.title(38))
                 .foregroundStyle(Theme.ink)
             Text("Un mot pour tous, sauf pour les infiltrés.")

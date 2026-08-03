@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
 $size = 1024
-$out = Join-Path $PSScriptRoot '..\Taupe\Resources\Assets.xcassets\AppIcon.appiconset\AppIcon.png'
+$out = Join-Path $PSScriptRoot '..\Mytho\Resources\Assets.xcassets\AppIcon.appiconset\AppIcon.png'
 $out = [System.IO.Path]::GetFullPath($out)
 
 # 24 bits par pixel : pas de canal alpha, l'App Store refuse les icônes transparentes.

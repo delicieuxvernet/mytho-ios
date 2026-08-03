@@ -1,7 +1,7 @@
 # Fiche App Store — brouillon
 
 > À copier-coller au moment de créer la fiche sur App Store Connect.
-> Le nom « Taupe » est un nom de travail : si on le change, tout ce fichier
+> Le nom « Mytho » est un nom de travail : si on le change, tout ce fichier
 > se met à jour en même temps que project.yml / Info.plist / Fastfile.
 
 ## Création de la fiche (les 3 gestes)
@@ -9,10 +9,10 @@
 | Champ | Valeur |
 |---|---|
 | Plateforme | iOS |
-| Nom | Taupe — le jeu des infiltrés |
+| Nom | Mytho — le jeu des infiltrés |
 | Langue principale | Français (France) |
-| Bundle ID | `fr.taupe.app` |
-| SKU | `taupe-ios-001` |
+| Bundle ID | `fr.mytho.app` |
+| SKU | `mytho-ios-001` |
 | Accès | Accès complet |
 
 ## Métadonnées
@@ -28,7 +28,7 @@
 ```
 Tout le monde reçoit le même mot secret. Tout le monde… sauf les infiltrés.
 
-Taupe est un jeu de société de déduction qui se joue sur un seul iPhone,
+Mytho est un jeu de société de déduction qui se joue sur un seul iPhone,
 autour d'une table, de 3 à 20 joueurs. Chacun pioche une carte, découvre
 son mot en secret, puis le décrit en une phrase. Ni trop précis — les
 infiltrés vous copieraient — ni trop vague — on vous accuserait.

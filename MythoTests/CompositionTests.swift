@@ -1,5 +1,5 @@
 import XCTest
-@testable import Taupe
+@testable import Mytho
 
 /// La composition est la règle la plus facile à casser sans s'en rendre compte :
 /// une manche où les infiltrés sont déjà majoritaires se termine avant d'avoir

@@ -62,8 +62,8 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild test \
-            -project Taupe.xcodeproj \
-            -scheme Taupe \
+            -project Mytho.xcodeproj \
+            -scheme Mytho \
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
             -test-timeouts-enabled YES \
@@ -172,8 +172,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Taupe-ipa
-          path: build/Taupe.ipa
+          name: Mytho-ipa
+          path: build/Mytho.ipa
           if-no-files-found: warn
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -185,7 +185,7 @@ jobs:
 #   MATCH_GIT_URL / MATCH_PASSWORD / MATCH_SSH_PRIVATE_KEY
 #       dépôt git privé des certificats, sa passphrase, et une clé de déploiement
 #   FASTLANE_TEAM_ID
-#       Team Apple propriétaire de fr.taupe.app
-# La fiche app fr.taupe.app doit déjà exister dans App Store Connect : pilot
+#       Team Apple propriétaire de fr.mytho.app
+# La fiche app fr.mytho.app doit déjà exister dans App Store Connect : pilot
 # envoie dessus, il ne la crée pas.
 # ─────────────────────────────────────────────────────────────────────────────

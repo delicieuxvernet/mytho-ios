@@ -1,5 +1,5 @@
 import XCTest
-@testable import Taupe
+@testable import Mytho
 
 /// La banque de mots est saisie à la main : ces tests attrapent les coquilles
 /// (doublon, mot vide, paire identique) avant qu'elles n'arrivent en partie.

@@ -1,5 +1,5 @@
 import XCTest
-@testable import Taupe
+@testable import Mytho
 
 /// Générateur reproductible : les tests doivent rejouer exactement la même
 /// distribution à chaque exécution.

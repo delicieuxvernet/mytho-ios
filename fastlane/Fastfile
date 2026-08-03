@@ -4,7 +4,7 @@
 # automatique n'est pas fiable pour la distribution en CI.
 default_platform(:ios)
 
-APP_ID = "fr.taupe.app"
+APP_ID = "fr.mytho.app"
 
 platform :ios do
   # ───────────────────────────────────────────────────────────────────────────
@@ -12,8 +12,8 @@ platform :ios do
   # le provisioning profile, puis les stocke chiffrés dans MATCH_GIT_URL.
   #
   # PRÉREQUIS manuels (une seule fois, `produce` échoue avec une clé API) :
-  #   - App ID `fr.taupe.app` sur developer.apple.com (aucune capability requise)
-  #   - Fiche app sur appstoreconnect.apple.com (iOS, français, SKU taupe-ios-001)
+  #   - App ID `fr.mytho.app` sur developer.apple.com (aucune capability requise)
+  #   - Fiche app sur appstoreconnect.apple.com (iOS, français, SKU mytho-ios-001)
   # ───────────────────────────────────────────────────────────────────────────
   lane :bootstrap do
     match(
@@ -70,14 +70,14 @@ platform :ios do
     UI.message("Profil de provisioning utilisé : #{profile_name}")
 
     build_app(
-      project: "Taupe.xcodeproj",
-      scheme: "Taupe",
+      project: "Mytho.xcodeproj",
+      scheme: "Mytho",
       configuration: "Release",
       clean: true,
       destination: "generic/platform=iOS",
       export_method: "app-store",
       output_directory: "build",
-      output_name: "Taupe.ipa",
+      output_name: "Mytho.ipa",
       export_options: {
         signingStyle: "manual",
         teamID: ENV.fetch("FASTLANE_TEAM_ID"),
@@ -90,7 +90,7 @@ platform :ios do
 
     upload_to_testflight(
       api_key: asc_api_key_hash,
-      ipa: "build/Taupe.ipa",
+      ipa: "build/Mytho.ipa",
       app_identifier: APP_ID,
       skip_submission: true,
       skip_waiting_for_build_processing: true

@@ -1,5 +1,5 @@
 <#
-    Taupe — dernier branchement de la CI
+    Mytho — dernier branchement de la CI
     ------------------------------------
     Quatre des sept secrets sont deja poses (match + team Apple). Il manque la
     cle API App Store Connect, qui ne peut pas etre recuperee : Apple ne laisse
@@ -18,14 +18,14 @@
         /!\ Le telechargement n'est possible qu'une fois — range le fichier.
 
     Le script n'affiche jamais le contenu de la cle. Il l'encode et l'envoie
-    directement dans les secrets GitHub du repo taupe-ios.
+    directement dans les secrets GitHub du repo mytho-ios.
 #>
 
 param(
     [Parameter(Mandatory = $true)][string]$P8,
     [Parameter(Mandatory = $true)][string]$KeyId,
     [Parameter(Mandatory = $true)][string]$IssuerId,
-    [string]$Repo = "delicieuxvernet/taupe-ios"
+    [string]$Repo = "delicieuxvernet/mytho-ios"
 )
 
 $ErrorActionPreference = 'Stop'
@@ -52,7 +52,7 @@ Write-Host "    gh workflow run bootstrap.yml --repo $Repo"
 Write-Host ""
 Write-Host "  Prerequis Apple a faire AVANT ce workflow :" -ForegroundColor Yellow
 Write-Host "    1. developer.apple.com  -> Identifiers -> (+) App IDs -> App"
-Write-Host "       Bundle ID explicite : fr.taupe.app   (aucune capability requise)"
+Write-Host "       Bundle ID explicite : fr.mytho.app   (aucune capability requise)"
 Write-Host "    2. appstoreconnect.apple.com -> Apps -> (+) Nouvelle app"
-Write-Host "       iOS, bundle fr.taupe.app, langue Francais, SKU taupe-ios-001"
+Write-Host "       iOS, bundle fr.mytho.app, langue Francais, SKU mytho-ios-001"
 Write-Host ""

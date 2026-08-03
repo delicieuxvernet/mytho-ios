@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 @main
-struct TaupeApp: App {
+struct MythoApp: App {
     @StateObject private var session = GameSession()
 
     var body: some Scene {
