@@ -1,0 +1,466 @@
+import Foundation
+
+/// Une paire de mots proches : les civils reçoivent l'un, les infiltrés l'autre.
+struct WordPair: Hashable, Codable, Sendable {
+    let a: String
+    let b: String
+}
+
+/// Catégorie thématique de paires de mots.
+struct WordCategory: Identifiable, Hashable, Sendable {
+    let id: String
+    let name: String
+    let symbol: String   // nom de SF Symbol
+    let pairs: [WordPair]
+}
+
+enum WordBank {
+
+    // MARK: - Catégories
+
+    static let categories: [WordCategory] = [
+        WordCategory(id: "general", name: "Tout public", symbol: "sparkles", pairs: generalPairs),
+        WordCategory(id: "food", name: "Nourriture", symbol: "fork.knife", pairs: foodPairs),
+        WordCategory(id: "animals", name: "Animaux", symbol: "pawprint.fill", pairs: animalsPairs),
+        WordCategory(id: "sport", name: "Sport", symbol: "figure.run", pairs: sportPairs),
+        WordCategory(id: "places", name: "Lieux & voyage", symbol: "airplane", pairs: placesPairs),
+        WordCategory(id: "culture", name: "Ciné, musique & culture", symbol: "film.fill", pairs: culturePairs),
+        WordCategory(id: "objects", name: "Objets du quotidien", symbol: "lamp.desk.fill", pairs: objectsPairs),
+        WordCategory(id: "spicy", name: "Soirée", symbol: "flame.fill", pairs: spicyPairs)
+    ]
+
+    /// Toutes les paires, toutes catégories confondues.
+    static var allPairs: [WordPair] { categories.flatMap(\.pairs) }
+
+    static func category(id: String) -> WordCategory? { categories.first { $0.id == id } }
+
+    /// Tire une paire au hasard parmi les catégories demandées, en évitant
+    /// autant que possible les paires déjà utilisées récemment.
+    static func randomPair(from categoryIDs: Set<String>, excluding recent: [WordPair] = []) -> WordPair {
+        var pool = categoryIDs.isEmpty
+            ? allPairs
+            : categories.filter { categoryIDs.contains($0.id) }.flatMap(\.pairs)
+        // Réglages sauvegardés pointant sur une catégorie supprimée depuis :
+        // on repart de la banque entière plutôt que de rendre un mot par défaut.
+        if pool.isEmpty { pool = allPairs }
+
+        let recentSet = Set(recent)
+        let fresh = pool.filter { !recentSet.contains($0) }
+        return (fresh.isEmpty ? pool : fresh).randomElement() ?? WordPair(a: "Chat", b: "Chien")
+    }
+
+    // MARK: - Tout public
+
+    private static let generalPairs: [WordPair] = [
+        WordPair(a: "Chat", b: "Chien"),
+        WordPair(a: "Soleil", b: "Lune"),
+        WordPair(a: "Neige", b: "Pluie"),
+        WordPair(a: "Livre", b: "Magazine"),
+        WordPair(a: "Crayon", b: "Stylo"),
+        WordPair(a: "Rivière", b: "Fleuve"),
+        WordPair(a: "Montagne", b: "Colline"),
+        WordPair(a: "Sourire", b: "Rire"),
+        WordPair(a: "Rêve", b: "Cauchemar"),
+        WordPair(a: "Matin", b: "Soir"),
+        WordPair(a: "Bougie", b: "Lampe"),
+        WordPair(a: "Miroir", b: "Fenêtre"),
+        WordPair(a: "Secret", b: "Mensonge"),
+        WordPair(a: "Ami", b: "Voisin"),
+        WordPair(a: "Cousin", b: "Frère"),
+        WordPair(a: "Été", b: "Printemps"),
+        WordPair(a: "Étoile", b: "Planète"),
+        WordPair(a: "Nuage", b: "Brouillard"),
+        WordPair(a: "Vent", b: "Tempête"),
+        WordPair(a: "Sable", b: "Terre"),
+        WordPair(a: "Clé", b: "Cadenas"),
+        WordPair(a: "Escalier", b: "Échelle"),
+        WordPair(a: "Pont", b: "Tunnel"),
+        WordPair(a: "Route", b: "Chemin"),
+        WordPair(a: "Jardin", b: "Parc"),
+        WordPair(a: "Feu", b: "Fumée"),
+        WordPair(a: "Ombre", b: "Reflet"),
+        WordPair(a: "Bruit", b: "Écho"),
+        WordPair(a: "Promesse", b: "Serment"),
+        WordPair(a: "Cadeau", b: "Surprise"),
+        WordPair(a: "Anniversaire", b: "Mariage"),
+        WordPair(a: "Photo", b: "Dessin"),
+        WordPair(a: "Bébé", b: "Enfant"),
+        WordPair(a: "Grand-père", b: "Oncle"),
+        WordPair(a: "Larme", b: "Goutte"),
+        WordPair(a: "Nuit", b: "Aube"),
+        WordPair(a: "Pierre", b: "Brique"),
+        WordPair(a: "Forêt", b: "Jungle"),
+        WordPair(a: "Île", b: "Continent"),
+        WordPair(a: "Question", b: "Réponse"),
+        WordPair(a: "Début", b: "Fin"),
+        WordPair(a: "Voyage", b: "Balade"),
+        WordPair(a: "Hiver", b: "Automne"),
+        WordPair(a: "Fantôme", b: "Sorcière")
+    ]
+
+    // MARK: - Nourriture
+
+    private static let foodPairs: [WordPair] = [
+        WordPair(a: "Café", b: "Thé"),
+        WordPair(a: "Pizza", b: "Quiche"),
+        WordPair(a: "Baguette", b: "Croissant"),
+        WordPair(a: "Fromage", b: "Yaourt"),
+        WordPair(a: "Beurre", b: "Margarine"),
+        WordPair(a: "Chocolat", b: "Caramel"),
+        WordPair(a: "Fraise", b: "Framboise"),
+        WordPair(a: "Pomme", b: "Poire"),
+        WordPair(a: "Citron", b: "Orange"),
+        WordPair(a: "Pâtes", b: "Riz"),
+        WordPair(a: "Soupe", b: "Bouillon"),
+        WordPair(a: "Crêpe", b: "Gaufre"),
+        WordPair(a: "Glace", b: "Sorbet"),
+        WordPair(a: "Steak", b: "Escalope"),
+        WordPair(a: "Poulet", b: "Dinde"),
+        WordPair(a: "Saumon", b: "Thon"),
+        WordPair(a: "Huître", b: "Moule"),
+        WordPair(a: "Sel", b: "Poivre"),
+        WordPair(a: "Moutarde", b: "Mayonnaise"),
+        WordPair(a: "Ketchup", b: "Vinaigrette"),
+        WordPair(a: "Miel", b: "Confiture"),
+        WordPair(a: "Vin", b: "Bière"),
+        WordPair(a: "Champagne", b: "Cidre"),
+        WordPair(a: "Jus d'orange", b: "Limonade"),
+        WordPair(a: "Eau plate", b: "Eau pétillante"),
+        WordPair(a: "Salade verte", b: "Taboulé"),
+        WordPair(a: "Frites", b: "Chips"),
+        WordPair(a: "Hamburger", b: "Sandwich"),
+        WordPair(a: "Sushi", b: "Tartare"),
+        WordPair(a: "Couscous", b: "Paella"),
+        WordPair(a: "Tarte", b: "Gâteau"),
+        WordPair(a: "Madeleine", b: "Financier"),
+        WordPair(a: "Bonbon", b: "Chewing-gum"),
+        WordPair(a: "Fromage blanc", b: "Crème fraîche"),
+        WordPair(a: "Omelette", b: "Œuf dur"),
+        WordPair(a: "Jambon", b: "Saucisson"),
+        WordPair(a: "Raclette", b: "Fondue"),
+        WordPair(a: "Barbecue", b: "Pique-nique"),
+        WordPair(a: "Petit-déjeuner", b: "Goûter"),
+        WordPair(a: "Restaurant", b: "Cantine"),
+        WordPair(a: "Chef", b: "Serveur"),
+        WordPair(a: "Boulanger", b: "Pâtissier"),
+        WordPair(a: "Basilic", b: "Persil"),
+        WordPair(a: "Champignon", b: "Truffe"),
+        WordPair(a: "Carotte", b: "Betterave"),
+        WordPair(a: "Pastèque", b: "Melon")
+    ]
+
+    // MARK: - Animaux
+
+    private static let animalsPairs: [WordPair] = [
+        WordPair(a: "Lion", b: "Tigre"),
+        WordPair(a: "Loup", b: "Renard"),
+        WordPair(a: "Cheval", b: "Âne"),
+        WordPair(a: "Vache", b: "Chèvre"),
+        WordPair(a: "Mouton", b: "Lama"),
+        WordPair(a: "Poule", b: "Canard"),
+        WordPair(a: "Aigle", b: "Faucon"),
+        WordPair(a: "Hibou", b: "Corbeau"),
+        WordPair(a: "Moineau", b: "Pigeon"),
+        WordPair(a: "Perroquet", b: "Toucan"),
+        WordPair(a: "Dauphin", b: "Baleine"),
+        WordPair(a: "Requin", b: "Orque"),
+        WordPair(a: "Poulpe", b: "Méduse"),
+        WordPair(a: "Crabe", b: "Homard"),
+        WordPair(a: "Tortue", b: "Escargot"),
+        WordPair(a: "Grenouille", b: "Lézard"),
+        WordPair(a: "Serpent", b: "Anguille"),
+        WordPair(a: "Crocodile", b: "Iguane"),
+        WordPair(a: "Éléphant", b: "Rhinocéros"),
+        WordPair(a: "Girafe", b: "Autruche"),
+        WordPair(a: "Zèbre", b: "Panda"),
+        WordPair(a: "Singe", b: "Gorille"),
+        WordPair(a: "Kangourou", b: "Lapin"),
+        WordPair(a: "Souris", b: "Rat"),
+        WordPair(a: "Hamster", b: "Cochon d'Inde"),
+        WordPair(a: "Écureuil", b: "Hérisson"),
+        WordPair(a: "Ours", b: "Sanglier"),
+        WordPair(a: "Cerf", b: "Renne"),
+        WordPair(a: "Abeille", b: "Guêpe"),
+        WordPair(a: "Fourmi", b: "Araignée"),
+        WordPair(a: "Papillon", b: "Libellule"),
+        WordPair(a: "Moustique", b: "Mouche"),
+        WordPair(a: "Chauve-souris", b: "Taupe"),
+        WordPair(a: "Manchot", b: "Phoque"),
+        WordPair(a: "Otarie", b: "Morse"),
+        WordPair(a: "Chameau", b: "Dromadaire"),
+        WordPair(a: "Hippopotame", b: "Buffle"),
+        WordPair(a: "Coq", b: "Paon"),
+        WordPair(a: "Cygne", b: "Oie"),
+        WordPair(a: "Flamant rose", b: "Héron"),
+        WordPair(a: "Lynx", b: "Guépard"),
+        WordPair(a: "Poisson rouge", b: "Carpe"),
+        WordPair(a: "Ver de terre", b: "Chenille"),
+        WordPair(a: "Dinosaure", b: "Dragon"),
+        WordPair(a: "Berger allemand", b: "Caniche"),
+        WordPair(a: "Chaton", b: "Chiot")
+    ]
+
+    // MARK: - Sport
+
+    private static let sportPairs: [WordPair] = [
+        WordPair(a: "Football", b: "Rugby"),
+        WordPair(a: "Tennis", b: "Badminton"),
+        WordPair(a: "Basket-ball", b: "Handball"),
+        WordPair(a: "Natation", b: "Plongeon"),
+        WordPair(a: "Marathon", b: "Sprint"),
+        WordPair(a: "Vélo", b: "Trottinette"),
+        WordPair(a: "Ski", b: "Snowboard"),
+        WordPair(a: "Patin à glace", b: "Roller"),
+        WordPair(a: "Boxe", b: "Judo"),
+        WordPair(a: "Karaté", b: "Escrime"),
+        WordPair(a: "Golf", b: "Pétanque"),
+        WordPair(a: "Yoga", b: "Pilates"),
+        WordPair(a: "Salle de sport", b: "Stade"),
+        WordPair(a: "Coureur", b: "Marcheur"),
+        WordPair(a: "Arbitre", b: "Entraîneur"),
+        WordPair(a: "Supporter", b: "Spectateur"),
+        WordPair(a: "Maillot", b: "Short"),
+        WordPair(a: "Baskets", b: "Crampons"),
+        WordPair(a: "Raquette", b: "Batte"),
+        WordPair(a: "But", b: "Panier"),
+        WordPair(a: "Médaille", b: "Trophée"),
+        WordPair(a: "Champion", b: "Finaliste"),
+        WordPair(a: "Jeux Olympiques", b: "Coupe du monde"),
+        WordPair(a: "Match", b: "Tournoi"),
+        WordPair(a: "Échauffement", b: "Étirement"),
+        WordPair(a: "Randonnée", b: "Escalade"),
+        WordPair(a: "Surf", b: "Planche à voile"),
+        WordPair(a: "Kayak", b: "Aviron"),
+        WordPair(a: "Voile", b: "Kitesurf"),
+        WordPair(a: "Équitation", b: "Polo"),
+        WordPair(a: "Gymnastique", b: "Trampoline"),
+        WordPair(a: "Danse classique", b: "Hip-hop"),
+        WordPair(a: "Saut en longueur", b: "Saut en hauteur"),
+        WordPair(a: "Lancer de poids", b: "Javelot"),
+        WordPair(a: "Ping-pong", b: "Squash"),
+        WordPair(a: "Volley-ball", b: "Water-polo"),
+        WordPair(a: "Hockey sur glace", b: "Curling"),
+        WordPair(a: "Formule 1", b: "Rallye"),
+        WordPair(a: "Moto-cross", b: "BMX"),
+        WordPair(a: "Alpinisme", b: "Spéléologie"),
+        WordPair(a: "Tir à l'arc", b: "Fléchettes"),
+        WordPair(a: "Billard", b: "Bowling"),
+        WordPair(a: "Échecs", b: "Dames"),
+        WordPair(a: "Vestiaire", b: "Tribune"),
+        WordPair(a: "Sifflet", b: "Chronomètre"),
+        WordPair(a: "Corde à sauter", b: "Tapis de course")
+    ]
+
+    // MARK: - Lieux & voyage
+
+    private static let placesPairs: [WordPair] = [
+        WordPair(a: "Piscine", b: "Mer"),
+        WordPair(a: "Plage", b: "Désert"),
+        WordPair(a: "Hôtel", b: "Auberge"),
+        WordPair(a: "Camping", b: "Bivouac"),
+        WordPair(a: "Aéroport", b: "Gare"),
+        WordPair(a: "Avion", b: "Train"),
+        WordPair(a: "Paquebot", b: "Voilier"),
+        WordPair(a: "Valise", b: "Sac à dos"),
+        WordPair(a: "Passeport", b: "Carte d'identité"),
+        WordPair(a: "Paris", b: "Londres"),
+        WordPair(a: "Rome", b: "Athènes"),
+        WordPair(a: "Japon", b: "Chine"),
+        WordPair(a: "Espagne", b: "Portugal"),
+        WordPair(a: "Canada", b: "Norvège"),
+        WordPair(a: "Brésil", b: "Mexique"),
+        WordPair(a: "Égypte", b: "Maroc"),
+        WordPair(a: "Village", b: "Ville"),
+        WordPair(a: "Quartier", b: "Banlieue"),
+        WordPair(a: "Musée", b: "Galerie d'art"),
+        WordPair(a: "Château", b: "Palais"),
+        WordPair(a: "Église", b: "Cathédrale"),
+        WordPair(a: "Marché", b: "Supermarché"),
+        WordPair(a: "Boulangerie", b: "Épicerie"),
+        WordPair(a: "Bibliothèque", b: "Librairie"),
+        WordPair(a: "Parc d'attractions", b: "Zoo"),
+        WordPair(a: "Alpes", b: "Pyrénées"),
+        WordPair(a: "Volcan", b: "Geyser"),
+        WordPair(a: "Cascade", b: "Lac"),
+        WordPair(a: "Grotte", b: "Canyon"),
+        WordPair(a: "Océan", b: "Lagon"),
+        WordPair(a: "Autoroute", b: "Périphérique"),
+        WordPair(a: "Métro", b: "Tramway"),
+        WordPair(a: "Taxi", b: "Bus"),
+        WordPair(a: "Croisière", b: "Road trip"),
+        WordPair(a: "Carte routière", b: "Boussole"),
+        WordPair(a: "Souvenir", b: "Carte postale"),
+        WordPair(a: "Douane", b: "Frontière"),
+        WordPair(a: "Décalage horaire", b: "Mal des transports"),
+        WordPair(a: "Port", b: "Phare"),
+        WordPair(a: "Ferme", b: "Ranch"),
+        WordPair(a: "Chalet", b: "Cabane"),
+        WordPair(a: "Appartement", b: "Studio"),
+        WordPair(a: "Balcon", b: "Terrasse"),
+        WordPair(a: "Ascenseur", b: "Escalator"),
+        WordPair(a: "Hôpital", b: "Pharmacie"),
+        WordPair(a: "École", b: "Université"),
+        WordPair(a: "Rond-point", b: "Carrefour")
+    ]
+
+    // MARK: - Ciné, musique & culture
+
+    private static let culturePairs: [WordPair] = [
+        WordPair(a: "Guitare", b: "Violon"),
+        WordPair(a: "Piano", b: "Orgue"),
+        WordPair(a: "Batterie", b: "Tambour"),
+        WordPair(a: "Flûte", b: "Clarinette"),
+        WordPair(a: "Trompette", b: "Saxophone"),
+        WordPair(a: "Chanteur", b: "Rappeur"),
+        WordPair(a: "Concert", b: "Festival"),
+        WordPair(a: "Opéra", b: "Comédie musicale"),
+        WordPair(a: "Cinéma", b: "Théâtre"),
+        WordPair(a: "Film", b: "Série"),
+        WordPair(a: "Acteur", b: "Figurant"),
+        WordPair(a: "Réalisateur", b: "Producteur"),
+        WordPair(a: "Scénario", b: "Dialogue"),
+        WordPair(a: "Comédie", b: "Parodie"),
+        WordPair(a: "Film d'horreur", b: "Thriller"),
+        WordPair(a: "Science-fiction", b: "Fantasy"),
+        WordPair(a: "Dessin animé", b: "Manga"),
+        WordPair(a: "Bande dessinée", b: "Roman"),
+        WordPair(a: "Poème", b: "Chanson"),
+        WordPair(a: "Roman policier", b: "Biographie"),
+        WordPair(a: "Journal télévisé", b: "Documentaire"),
+        WordPair(a: "Radio", b: "Télévision"),
+        WordPair(a: "Podcast", b: "Émission"),
+        WordPair(a: "Micro", b: "Casque"),
+        WordPair(a: "Vinyle", b: "CD"),
+        WordPair(a: "Playlist", b: "Album"),
+        WordPair(a: "Refrain", b: "Couplet"),
+        WordPair(a: "Orchestre", b: "Chorale"),
+        WordPair(a: "Chef d'orchestre", b: "Soliste"),
+        WordPair(a: "Ballet", b: "Claquettes"),
+        WordPair(a: "Peinture", b: "Sculpture"),
+        WordPair(a: "Aquarelle", b: "Fusain"),
+        WordPair(a: "Portrait", b: "Paysage"),
+        WordPair(a: "Graffiti", b: "Fresque"),
+        WordPair(a: "Photographe", b: "Journaliste"),
+        WordPair(a: "Styliste", b: "Couturier"),
+        WordPair(a: "Star de cinéma", b: "Star de télé-réalité"),
+        WordPair(a: "Générique", b: "Bande-annonce"),
+        WordPair(a: "Sous-titres", b: "Doublage"),
+        WordPair(a: "Applaudissements", b: "Sifflets"),
+        WordPair(a: "Scène", b: "Coulisses"),
+        WordPair(a: "Costume", b: "Déguisement"),
+        WordPair(a: "Magicien", b: "Clown"),
+        WordPair(a: "Cirque", b: "Fête foraine"),
+        WordPair(a: "Conte de fées", b: "Légende"),
+        WordPair(a: "Super-héros", b: "Méchant"),
+        WordPair(a: "Jeu vidéo", b: "Jeu de société"),
+        WordPair(a: "Autobiographie", b: "Journal intime")
+    ]
+
+    // MARK: - Objets du quotidien
+
+    private static let objectsPairs: [WordPair] = [
+        WordPair(a: "Fourchette", b: "Cuillère"),
+        WordPair(a: "Couteau", b: "Ciseaux"),
+        WordPair(a: "Assiette", b: "Bol"),
+        WordPair(a: "Verre", b: "Tasse"),
+        WordPair(a: "Casserole", b: "Poêle"),
+        WordPair(a: "Four", b: "Micro-ondes"),
+        WordPair(a: "Réfrigérateur", b: "Congélateur"),
+        WordPair(a: "Machine à laver", b: "Lave-vaisselle"),
+        WordPair(a: "Aspirateur", b: "Balai"),
+        WordPair(a: "Éponge", b: "Serpillière"),
+        WordPair(a: "Serviette", b: "Torchon"),
+        WordPair(a: "Savon", b: "Gel douche"),
+        WordPair(a: "Shampoing", b: "Dentifrice"),
+        WordPair(a: "Brosse à dents", b: "Peigne"),
+        WordPair(a: "Rasoir", b: "Tondeuse"),
+        WordPair(a: "Sèche-cheveux", b: "Fer à repasser"),
+        WordPair(a: "Oreiller", b: "Coussin"),
+        WordPair(a: "Couette", b: "Couverture"),
+        WordPair(a: "Matelas", b: "Canapé"),
+        WordPair(a: "Chaise", b: "Tabouret"),
+        WordPair(a: "Table", b: "Bureau"),
+        WordPair(a: "Armoire", b: "Commode"),
+        WordPair(a: "Étagère", b: "Placard"),
+        WordPair(a: "Rideau", b: "Store"),
+        WordPair(a: "Tapis", b: "Paillasson"),
+        WordPair(a: "Ampoule", b: "Néon"),
+        WordPair(a: "Interrupteur", b: "Prise"),
+        WordPair(a: "Téléphone", b: "Tablette"),
+        WordPair(a: "Clavier", b: "Manette"),
+        WordPair(a: "Écouteurs", b: "Enceinte"),
+        WordPair(a: "Chargeur", b: "Batterie externe"),
+        WordPair(a: "Montre", b: "Réveil"),
+        WordPair(a: "Lunettes", b: "Loupe"),
+        WordPair(a: "Parapluie", b: "Parasol"),
+        WordPair(a: "Sac à main", b: "Portefeuille"),
+        WordPair(a: "Porte-monnaie", b: "Tirelire"),
+        WordPair(a: "Cahier", b: "Agenda"),
+        WordPair(a: "Règle", b: "Équerre"),
+        WordPair(a: "Colle", b: "Ruban adhésif"),
+        WordPair(a: "Enveloppe", b: "Timbre"),
+        WordPair(a: "Poubelle", b: "Panier à linge"),
+        WordPair(a: "Marteau", b: "Tournevis"),
+        WordPair(a: "Perceuse", b: "Scie"),
+        WordPair(a: "Clou", b: "Vis"),
+        WordPair(a: "Bocal", b: "Bouteille"),
+        WordPair(a: "Boîte", b: "Sachet"),
+        WordPair(a: "Ventilateur", b: "Climatiseur"),
+        WordPair(a: "Radiateur", b: "Cheminée"),
+        WordPair(a: "Cintre", b: "Pince à linge"),
+        WordPair(a: "Allumette", b: "Briquet")
+    ]
+
+    // MARK: - Soirée
+
+    private static let spicyPairs: [WordPair] = [
+        WordPair(a: "Gueule de bois", b: "Mal de tête"),
+        WordPair(a: "Application de rencontre", b: "Réseau social"),
+        WordPair(a: "Karaoké", b: "Blind test"),
+        WordPair(a: "Soirée pyjama", b: "Soirée déguisée"),
+        WordPair(a: "Boîte de nuit", b: "Bar"),
+        WordPair(a: "Cocktail", b: "Sirop"),
+        WordPair(a: "Apéro", b: "Digestif"),
+        WordPair(a: "Discours de mariage", b: "Toast"),
+        WordPair(a: "Piste de danse", b: "Bar du fond"),
+        WordPair(a: "DJ", b: "Chanteur de karaoké"),
+        WordPair(a: "Boule à facettes", b: "Stroboscope"),
+        WordPair(a: "Premier rendez-vous", b: "Rendez-vous arrangé"),
+        WordPair(a: "Coup de foudre", b: "Amitié"),
+        WordPair(a: "Drague", b: "Compliment"),
+        WordPair(a: "Vu sans réponse", b: "Réponse à retardement"),
+        WordPair(a: "Selfie", b: "Photo de groupe"),
+        WordPair(a: "Story", b: "Publication"),
+        WordPair(a: "Like", b: "Commentaire"),
+        WordPair(a: "Influenceur", b: "Youtubeur"),
+        WordPair(a: "Ragot", b: "Confidence"),
+        WordPair(a: "Vérité", b: "Action"),
+        WordPair(a: "Gage", b: "Défi"),
+        WordPair(a: "Bluff", b: "Exagération"),
+        WordPair(a: "Fou rire", b: "Sourire forcé"),
+        WordPair(a: "Ronflement", b: "Bâillement"),
+        WordPair(a: "Réveil difficile", b: "Grasse matinée"),
+        WordPair(a: "Café du matin", b: "Douche froide"),
+        WordPair(a: "Pizza de minuit", b: "Sandwich de fin de soirée"),
+        WordPair(a: "Taxi de nuit", b: "Dernier métro"),
+        WordPair(a: "Voisin du dessus", b: "Colocataire"),
+        WordPair(a: "Colocation", b: "Vie à deux"),
+        WordPair(a: "Rendez-vous galant", b: "Dîner entre amis"),
+        WordPair(a: "Bouquet de fleurs", b: "Boîte de chocolats"),
+        WordPair(a: "Bisou", b: "Câlin"),
+        WordPair(a: "Enterrement de vie de garçon", b: "Week-end entre amis"),
+        WordPair(a: "Demande en mariage", b: "Déclaration d'amour"),
+        WordPair(a: "Anniversaire surprise", b: "Fête improvisée"),
+        WordPair(a: "Cadeau raté", b: "Cadeau recyclé"),
+        WordPair(a: "Retard chronique", b: "Annulation de dernière minute"),
+        WordPair(a: "Excuse bidon", b: "Petit mensonge"),
+        WordPair(a: "Photo de profil", b: "Photo d'identité"),
+        WordPair(a: "Chuchotement", b: "Cri"),
+        WordPair(a: "Secret bien gardé", b: "Rumeur"),
+        WordPair(a: "Bonne résolution", b: "Promesse en l'air"),
+        WordPair(a: "Dernier verre", b: "Verre de l'amitié"),
+        WordPair(a: "Sieste", b: "Nuit blanche"),
+        WordPair(a: "Regard complice", b: "Clin d'œil"),
+        WordPair(a: "Playback", b: "Chorégraphie improvisée")
+    ]
+}

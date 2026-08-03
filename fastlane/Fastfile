@@ -1,0 +1,128 @@
+# Pipeline TestFlight sans Mac, calqué sur celui du repo Kiwio (rodé depuis
+# mai 2026). Signature : clé API App Store Connect + fastlane match.
+# Build : signature MANUELLE avec le profil installé par match — la signature
+# automatique n'est pas fiable pour la distribution en CI.
+default_platform(:ios)
+
+APP_ID = "fr.taupe.app"
+
+platform :ios do
+  # ───────────────────────────────────────────────────────────────────────────
+  # bootstrap — PREMIER RUN UNIQUEMENT. Crée le certificat de distribution et
+  # le provisioning profile, puis les stocke chiffrés dans MATCH_GIT_URL.
+  #
+  # PRÉREQUIS manuels (une seule fois, `produce` échoue avec une clé API) :
+  #   - App ID `fr.taupe.app` sur developer.apple.com (aucune capability requise)
+  #   - Fiche app sur appstoreconnect.apple.com (iOS, français, SKU taupe-ios-001)
+  # ───────────────────────────────────────────────────────────────────────────
+  lane :bootstrap do
+    match(
+      type: "appstore",
+      app_identifier: APP_ID,
+      git_url: ENV.fetch("MATCH_GIT_URL"),
+      storage_mode: "git",
+      readonly: false,
+      api_key: asc_api_key_hash
+    )
+  end
+
+  desc "Résout match, build en signature manuelle, envoie sur TestFlight"
+  lane :beta do
+    # Trousseau dédié et déverrouillé : sur CI, le trousseau par défaut est
+    # protégé sans interface, et codesign reste bloqué sur une demande
+    # d'autorisation qui n'arrivera jamais.
+    keychain_name = "build.keychain"
+    keychain_password = "tempBuildPass"
+    create_keychain(
+      name: keychain_name,
+      password: keychain_password,
+      default_keychain: true,
+      unlock: true,
+      timeout: 0,
+      lock_when_sleeps: false,
+      add_to_search_list: true
+    )
+
+    match(
+      type: "appstore",
+      app_identifier: APP_ID,
+      git_url: ENV.fetch("MATCH_GIT_URL"),
+      storage_mode: "git",
+      readonly: true,
+      api_key: asc_api_key_hash,
+      keychain_name: keychain_name,
+      keychain_password: keychain_password
+    )
+
+    # Le nom du profil installé par match a changé de clé selon les versions de
+    # fastlane : on essaie les sources connues et on échoue BRUYAMMENT avec un
+    # diagnostic plutôt que de deviner en silence.
+    mapping = lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING] || {}
+    profile_name = mapping[APP_ID] ||
+                   mapping["#{APP_ID}.appstore"] ||
+                   ENV["sigh_#{APP_ID}_appstore_profile-name"] ||
+                   ENV["sigh_#{APP_ID}_appstore"]
+
+    if profile_name.nil? || profile_name.to_s.empty?
+      sh("env | grep -i 'sigh_\\|match_' || true")
+      UI.user_error!("Nom du profil match introuvable. Inspecter le dump ci-dessus.")
+    end
+    UI.message("Profil de provisioning utilisé : #{profile_name}")
+
+    build_app(
+      project: "Taupe.xcodeproj",
+      scheme: "Taupe",
+      configuration: "Release",
+      clean: true,
+      destination: "generic/platform=iOS",
+      export_method: "app-store",
+      output_directory: "build",
+      output_name: "Taupe.ipa",
+      export_options: {
+        signingStyle: "manual",
+        teamID: ENV.fetch("FASTLANE_TEAM_ID"),
+        provisioningProfiles: { APP_ID => profile_name }
+      }
+      # La signature n'est volontairement PAS passée via xcargs : les xcargs
+      # globaux s'appliquent à toutes les cibles, y compris les paquets SPM qui
+      # ne supportent pas les provisioning profiles (erreur d'archive 65).
+    )
+
+    upload_to_testflight(
+      api_key: asc_api_key_hash,
+      ipa: "build/Taupe.ipa",
+      app_identifier: APP_ID,
+      skip_submission: true,
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # refresh_profiles — régénère le profil App Store en écriture après avoir
+  # coché une nouvelle capability sur l'App ID. Ne révoque jamais le certificat.
+  # ───────────────────────────────────────────────────────────────────────────
+  lane :refresh_profiles do
+    match(
+      type: "appstore",
+      app_identifier: APP_ID,
+      git_url: ENV.fetch("MATCH_GIT_URL"),
+      storage_mode: "git",
+      readonly: false,
+      force: true,
+      api_key: asc_api_key_hash
+    )
+  end
+
+end
+
+# Méthode Ruby simple plutôt qu'une private_lane : appelable depuis n'importe
+# quelle lane, sans dépendre du mécanisme de retour de valeur des lanes.
+def asc_api_key_hash
+  app_store_connect_api_key(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key_content: ENV.fetch("ASC_API_KEY_BASE64"),
+    is_key_content_base64: true,
+    in_house: false
+  )
+end

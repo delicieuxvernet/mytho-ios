@@ -1,0 +1,147 @@
+name: Build & Deploy to TestFlight
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # ── Tests : gate de PR ET gate de déploiement ─────────────────────────────
+  # Compile l'app et la suite de tests sur simulateur, sans signature ni secret
+  # Apple. Le job de déploiement en dépend via `needs:` — un push direct sur main
+  # avec des tests rouges ne peut donc pas livrer en TestFlight.
+  tests:
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    env:
+      LC_ALL: en_US.UTF-8
+      LANG: en_US.UTF-8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26.2
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # Le .xcodeproj n'est pas versionné : project.yml est la source de vérité.
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Run tests
+        timeout-minutes: 20
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Taupe.xcodeproj \
+            -scheme Taupe \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
+            -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 120 \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults.xcresult
+          path: ${{ runner.temp }}/TestResults.xcresult
+          if-no-files-found: warn
+
+  # ── Build + envoi TestFlight (pushes sur main uniquement) ─────────────────
+  build-and-upload:
+    if: github.event_name != 'pull_request'
+    needs: tests
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+      MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      FASTLANE_TEAM_ID: ${{ secrets.FASTLANE_TEAM_ID }}
+      FASTLANE_SKIP_UPDATE_CHECK: "1"
+      FASTLANE_HIDE_CHANGELOG: "1"
+      FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: "180"
+      FASTLANE_XCODEBUILD_SETTINGS_RETRIES: "5"
+      LC_ALL: en_US.UTF-8
+      LANG: en_US.UTF-8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH for match (dépôt de certificats)
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.MATCH_SSH_PRIVATE_KEY }}
+
+      - name: Trust github.com host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+
+      # Le SDK iOS 26 (Xcode 26) est obligatoire pour tout envoi App Store
+      # Connect depuis le 28 avril 2026.
+      - name: Select Xcode 26.2
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # github.run_number est monotone et jamais réutilisé : sans ça, le second
+      # push échouerait à l'upload ("build 1.0.0 (1) already exists").
+      - name: Bump CURRENT_PROJECT_VERSION to github.run_number
+        run: |
+          sed -i.bak "s/^        CURRENT_PROJECT_VERSION: .*/        CURRENT_PROJECT_VERSION: ${{ github.run_number }}/" project.yml
+          rm -f project.yml.bak
+          grep "CURRENT_PROJECT_VERSION" project.yml
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Set up Ruby (fastlane)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: false
+
+      # fastlane épinglé à la version connue bonne sur le repo Kiwio, et
+      # multi_json installé explicitement : le chargeur d'actions le `require`
+      # sans qu'aucune gem ne le déclare en dépendance dure sur Ruby 3.4.
+      - name: Install fastlane
+        run: gem install fastlane:2.235.0 multi_json --no-document
+
+      - name: Build & upload to TestFlight (fastlane)
+        run: fastlane ios beta
+
+      - name: Upload IPA artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Taupe-ipa
+          path: build/Taupe.ipa
+          if-no-files-found: warn
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECRETS REQUIS (à définir sur ce repo avant le premier push sur main) :
+#   ASC_KEY_ID / ASC_ISSUER_ID / ASC_API_KEY_BASE64
+#       clé API App Store Connect — doit être une clé d'ÉQUIPE avec le rôle
+#       ADMIN (les clés individuelles et le rôle App Manager ne peuvent pas
+#       gérer les ressources de signature)
+#   MATCH_GIT_URL / MATCH_PASSWORD / MATCH_SSH_PRIVATE_KEY
+#       dépôt git privé des certificats, sa passphrase, et une clé de déploiement
+#   FASTLANE_TEAM_ID
+#       Team Apple propriétaire de fr.taupe.app
+# La fiche app fr.taupe.app doit déjà exister dans App Store Connect : pilot
+# envoie dessus, il ne la crée pas.
+# ─────────────────────────────────────────────────────────────────────────────

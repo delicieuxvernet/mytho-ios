@@ -1,0 +1,269 @@
+import Foundation
+
+/// Moteur d'une manche. Logique pure, sans SwiftUI ni effet de bord : tout est
+/// testable et rejouable à l'identique en injectant un générateur aléatoire.
+///
+/// Le déroulé suit celui du jeu de société : distribution des cartes face cachée,
+/// puis des cycles description -> vote -> élimination jusqu'à ce qu'un camp gagne.
+struct GameEngine: Sendable {
+
+    // MARK: État
+
+    private(set) var config: GameConfig
+    private(set) var players: [Player]
+    private(set) var phase: GamePhase
+
+    /// Le mot majoritaire, donné aux civils.
+    private(set) var civilianWord: String
+    /// Le mot proche, donné aux undercover.
+    private(set) var undercoverWord: String
+
+    /// Le paquet face cachée : les rôles restant à piocher, dans l'ordre des cartes.
+    /// Une case passe à `nil` dès que la carte a été prise.
+    private(set) var deck: [Role?]
+
+    /// Ordre de parole de la manche en cours, recalculé à chaque tour.
+    private(set) var speakingOrder: [UUID]
+
+    /// Points cumulés sur la manche qui vient de s'achever (vide avant la fin).
+    private(set) var roundPoints: [UUID: Int] = [:]
+
+    // MARK: Cycle de vie
+
+    /// Prépare une manche : tire la paire de mots, constitue et mélange le paquet.
+    init(
+        config: GameConfig,
+        pair: WordPair,
+        players: [Player]? = nil,
+        using generator: inout some RandomNumberGenerator
+    ) {
+        var cfg = config
+        (cfg.undercoverCount, cfg.mrWhiteCount) = Composition.clamp(
+            undercover: cfg.undercoverCount,
+            mrWhite: cfg.mrWhiteCount,
+            playerCount: cfg.playerCount
+        )
+        self.config = cfg
+
+        // Quel mot de la paire va aux civils : tiré au sort, sinon le premier
+        // joueur pourrait déduire son camp en reconnaissant « le mot de gauche ».
+        if Bool.random(using: &generator) {
+            self.civilianWord = pair.a
+            self.undercoverWord = pair.b
+        } else {
+            self.civilianWord = pair.b
+            self.undercoverWord = pair.a
+        }
+
+        self.players = players ?? cfg.playerNames.map { Player(name: $0) }
+
+        var roles: [Role] = []
+        roles.append(contentsOf: Array(repeating: .undercover, count: cfg.undercoverCount))
+        roles.append(contentsOf: Array(repeating: .mrWhite, count: cfg.mrWhiteCount))
+        roles.append(contentsOf: Array(repeating: .civilian, count: max(0, cfg.civilianCount)))
+        roles.shuffle(using: &generator)
+        self.deck = roles.map { Optional($0) }
+
+        self.speakingOrder = []
+        self.phase = .dealing(playerIndex: 0)
+    }
+
+    // MARK: Distribution
+
+    /// Le joueur dont c'est le tour prend la carte à `cardIndex`.
+    /// Retourne le rôle révélé, ou nil si le coup est invalide.
+    @discardableResult
+    mutating func pickCard(at cardIndex: Int) -> Role? {
+        guard case .dealing(let playerIndex) = phase,
+              players.indices.contains(playerIndex),
+              deck.indices.contains(cardIndex),
+              let role = deck[cardIndex]
+        else { return nil }
+
+        deck[cardIndex] = nil
+        players[playerIndex].role = role
+        players[playerIndex].pickedCardIndex = cardIndex
+        return role
+    }
+
+    /// Passe au joueur suivant, ou démarre la partie si tout le monde a pioché.
+    mutating func advanceDealing(using generator: inout some RandomNumberGenerator) {
+        guard case .dealing(let playerIndex) = phase else { return }
+        guard players[playerIndex].role != nil else { return }
+
+        let next = playerIndex + 1
+        if next < players.count {
+            phase = .dealing(playerIndex: next)
+        } else {
+            startRound(1, using: &generator)
+        }
+    }
+
+    // MARK: Tours de description
+
+    private mutating func startRound(_ round: Int, using generator: inout some RandomNumberGenerator) {
+        speakingOrder = makeSpeakingOrder(using: &generator)
+        phase = .describing(round: round)
+    }
+
+    /// Ordre de parole aléatoire parmi les joueurs encore en vie.
+    /// Sauf option contraire, Mr. White ne peut pas ouvrir : sans mot ni indice
+    /// préalable, il serait démasqué à tous les coups.
+    private func makeSpeakingOrder(using generator: inout some RandomNumberGenerator) -> [UUID] {
+        var alive = players.filter(\.isAlive)
+        alive.shuffle(using: &generator)
+
+        if !config.mrWhiteCanStart, alive.count > 1, alive[0].role == .mrWhite {
+            // On échange avec un joueur non-Mr. White s'il en existe un.
+            if let swapIndex = alive.dropFirst().firstIndex(where: { $0.role != .mrWhite }) {
+                alive.swapAt(0, swapIndex)
+            }
+        }
+        return alive.map(\.id)
+    }
+
+    /// Fin de la phase de description : on passe au vote.
+    mutating func startVote() {
+        guard case .describing = phase else { return }
+        phase = .voting
+    }
+
+    // MARK: Élimination
+
+    /// Élimine un joueur et révèle son rôle. Le vote lui-même se fait à la table.
+    mutating func eliminate(playerID: UUID) {
+        guard case .voting = phase,
+              let index = players.firstIndex(where: { $0.id == playerID }),
+              players[index].isAlive
+        else { return }
+
+        players[index].isAlive = false
+        phase = .elimination(playerID: playerID)
+    }
+
+    /// Enchaîne après la révélation : soit Mr. White tente sa chance, soit on
+    /// vérifie les conditions de victoire.
+    mutating func resolveElimination(using generator: inout some RandomNumberGenerator) {
+        guard case .elimination(let playerID) = phase,
+              let player = players.first(where: { $0.id == playerID })
+        else { return }
+
+        if player.role == .mrWhite {
+            phase = .mrWhiteGuess(playerID: playerID)
+        } else {
+            continueOrFinish(using: &generator)
+        }
+    }
+
+    /// Mr. White éliminé propose un mot. Retourne `true` s'il a vu juste.
+    @discardableResult
+    mutating func submitMrWhiteGuess(_ guess: String, using generator: inout some RandomNumberGenerator) -> Bool {
+        guard case .mrWhiteGuess(let playerID) = phase else { return false }
+
+        if Self.matches(guess: guess, word: civilianWord) {
+            finish(.mrWhiteGuessedRight(playerID: playerID))
+            return true
+        }
+        continueOrFinish(using: &generator)
+        return false
+    }
+
+    /// Comparaison tolérante : casse, accents, espaces et articles ignorés.
+    /// « LES chats » doit valider « Chat ».
+    static func matches(guess: String, word: String) -> Bool {
+        normalized(guess) == normalized(word)
+    }
+
+    private static func normalized(_ text: String) -> String {
+        var value = text
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR"))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        for article in ["l'", "le ", "la ", "les ", "un ", "une ", "des ", "du "] where value.hasPrefix(article) {
+            value = String(value.dropFirst(article.count))
+            break
+        }
+        value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Pluriel simple : « chats » vaut « chat ».
+        if value.count > 3, value.hasSuffix("s") { value = String(value.dropLast()) }
+        return value
+    }
+
+    // MARK: Conditions de victoire
+
+    private mutating func continueOrFinish(using generator: inout some RandomNumberGenerator) {
+        let alive = players.filter(\.isAlive)
+        let infiltrators = alive.filter { $0.role?.isInfiltrator == true }.count
+        let civilians = alive.count - infiltrators
+
+        if infiltrators == 0 {
+            finish(.civiliansWin)
+        } else if civilians <= 1 {
+            // Les infiltrés ne peuvent plus être mis en minorité.
+            finish(.infiltratorsWin)
+        } else {
+            let round = currentRound + 1
+            startRound(round, using: &generator)
+        }
+    }
+
+    private var currentRound: Int {
+        if case .describing(let round) = phase { return round }
+        return roundsPlayed
+    }
+
+    /// Nombre de tours de description déjà joués, déduit des éliminations.
+    private var roundsPlayed: Int {
+        players.filter { !$0.isAlive }.count
+    }
+
+    private mutating func finish(_ outcome: RoundOutcome) {
+        roundPoints = Self.points(for: outcome, players: players)
+        phase = .finished(outcome)
+    }
+
+    /// Barème : civils +2 chacun, undercover survivant +10, Mr. White +6
+    /// (qu'il survive ou qu'il devine le mot).
+    static func points(for outcome: RoundOutcome, players: [Player]) -> [UUID: Int] {
+        var points: [UUID: Int] = [:]
+        switch outcome {
+        case .civiliansWin:
+            for player in players where player.role == .civilian {
+                points[player.id] = Score.civilianWin
+            }
+        case .infiltratorsWin:
+            for player in players where player.isAlive {
+                switch player.role {
+                case .undercover: points[player.id] = Score.undercoverSurvives
+                case .mrWhite: points[player.id] = Score.mrWhiteSurvives
+                default: break
+                }
+            }
+        case .mrWhiteGuessedRight(let playerID):
+            points[playerID] = Score.mrWhiteGuessesRight
+        }
+        return points
+    }
+
+    // MARK: Accès de confort
+
+    var alivePlayers: [Player] { players.filter(\.isAlive) }
+
+    var isFinished: Bool {
+        if case .finished = phase { return true }
+        return false
+    }
+
+    var outcome: RoundOutcome? {
+        if case .finished(let outcome) = phase { return outcome }
+        return nil
+    }
+
+    /// Les joueurs dans l'ordre de parole du tour en cours.
+    var orderedSpeakers: [Player] {
+        speakingOrder.compactMap { id in players.first { $0.id == id } }
+    }
+
+    func player(id: UUID) -> Player? { players.first { $0.id == id } }
+}
