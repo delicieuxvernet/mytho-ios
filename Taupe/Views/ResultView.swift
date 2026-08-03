@@ -150,10 +150,17 @@ struct ResultView: View {
 
                         Spacer(minLength: 6)
 
-                        if let points = engine.roundPoints[player.id], points > 0 {
-                            Text("+\(points)")
+                        // Le duel peut rendre un total négatif : on affiche le signe.
+                        if let points = engine.roundPoints[player.id], points != 0 {
+                            Text(points > 0 ? "+\(points)" : "\(points)")
                                 .font(Theme.caption(13))
+                                .foregroundStyle(points > 0 ? Theme.amber : Theme.crimson)
+                        }
+                        if let special = player.specialRole {
+                            Image(systemName: special.symbol)
+                                .font(.system(size: 12, weight: .bold))
                                 .foregroundStyle(Theme.amber)
+                                .accessibilityLabel(special.displayName)
                         }
                         if let role = player.role {
                             RoleBadge(role: role, compact: true)

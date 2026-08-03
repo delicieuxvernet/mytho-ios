@@ -142,7 +142,7 @@ struct DealView: View {
     // MARK: Révélation
 
     private var revealed: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 22) {
             if let role = revealedRole, let pickedIndex {
                 WordCard(
                     role: role,
@@ -152,6 +152,31 @@ struct DealView: View {
                     namespace: cardNamespace
                 )
                 .padding(.horizontal, 44)
+            }
+
+            // Pouvoir surajouté : lu en même temps que le mot, à l'abri des regards.
+            if let special = engine.players[playerIndex].specialRole {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: special.symbol)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Theme.amber)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(special.displayName)
+                            .font(Theme.caption(14))
+                            .foregroundStyle(Theme.amber)
+                        Text(special.briefing)
+                            .font(Theme.caption(13))
+                            .foregroundStyle(Theme.inkMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                        .fill(Theme.amber.opacity(0.10))
+                )
+                .padding(.horizontal, Theme.gutter)
             }
 
             VStack(spacing: 10) {

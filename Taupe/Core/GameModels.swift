@@ -38,14 +38,24 @@ struct Player: Identifiable, Hashable, Codable, Sendable {
     var name: String
     /// Nil tant que le joueur n'a pas pioché sa carte.
     var role: Role?
+    /// Pouvoir surajouté au rôle de base. Ne change jamais le camp du joueur.
+    var specialRole: SpecialRole?
     var isAlive: Bool
     /// Index de la carte piochée dans le paquet, pour l'animation de retournement.
     var pickedCardIndex: Int?
 
-    init(id: UUID = UUID(), name: String, role: Role? = nil, isAlive: Bool = true, pickedCardIndex: Int? = nil) {
+    init(
+        id: UUID = UUID(),
+        name: String,
+        role: Role? = nil,
+        specialRole: SpecialRole? = nil,
+        isAlive: Bool = true,
+        pickedCardIndex: Int? = nil
+    ) {
         self.id = id
         self.name = name
         self.role = role
+        self.specialRole = specialRole
         self.isAlive = isAlive
         self.pickedCardIndex = pickedCardIndex
     }
@@ -74,6 +84,10 @@ struct GameConfig: Hashable, Codable, Sendable {
     var easyMode: Bool
     /// La composition est retirée au hasard à chaque manche, dans les bornes valides.
     var randomMode: Bool
+    /// Pouvoirs attribués à des joueurs en plus de leur rôle.
+    var specialRoles: Set<SpecialRole>
+    /// Variantes qui s'appliquent à toute la table.
+    var tableRules: Set<TableRule>
 
     init(
         playerNames: [String] = [],
@@ -82,7 +96,9 @@ struct GameConfig: Hashable, Codable, Sendable {
         categoryIDs: Set<String> = [],
         mrWhiteCanStart: Bool = false,
         easyMode: Bool = false,
-        randomMode: Bool = false
+        randomMode: Bool = false,
+        specialRoles: Set<SpecialRole> = [],
+        tableRules: Set<TableRule> = []
     ) {
         self.playerNames = playerNames
         self.undercoverCount = undercoverCount
@@ -91,6 +107,29 @@ struct GameConfig: Hashable, Codable, Sendable {
         self.mrWhiteCanStart = mrWhiteCanStart
         self.easyMode = easyMode
         self.randomMode = randomMode
+        self.specialRoles = specialRoles
+        self.tableRules = tableRules
+    }
+
+    // Réglages sauvegardés avant l'arrivée des pouvoirs : les deux champs
+    // manquent du JSON stocké, il faut donc les rendre optionnels au décodage
+    // sous peine de repartir sur une configuration vide à la mise à jour.
+    private enum CodingKeys: String, CodingKey {
+        case playerNames, undercoverCount, mrWhiteCount, categoryIDs
+        case mrWhiteCanStart, easyMode, randomMode, specialRoles, tableRules
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        playerNames = try container.decode([String].self, forKey: .playerNames)
+        undercoverCount = try container.decode(Int.self, forKey: .undercoverCount)
+        mrWhiteCount = try container.decode(Int.self, forKey: .mrWhiteCount)
+        categoryIDs = try container.decodeIfPresent(Set<String>.self, forKey: .categoryIDs) ?? []
+        mrWhiteCanStart = try container.decodeIfPresent(Bool.self, forKey: .mrWhiteCanStart) ?? false
+        easyMode = try container.decodeIfPresent(Bool.self, forKey: .easyMode) ?? false
+        randomMode = try container.decodeIfPresent(Bool.self, forKey: .randomMode) ?? false
+        specialRoles = try container.decodeIfPresent(Set<SpecialRole>.self, forKey: .specialRoles) ?? []
+        tableRules = try container.decodeIfPresent(Set<TableRule>.self, forKey: .tableRules) ?? []
     }
 
     var playerCount: Int { playerNames.count }
@@ -177,8 +216,11 @@ enum GamePhase: Hashable, Sendable {
     case describing(round: Int)
     /// Le groupe désigne un joueur à éliminer.
     case voting
-    /// Le rôle du joueur éliminé vient d'être révélé.
-    case elimination(playerID: UUID)
+    /// Les rôles des joueurs qui viennent de tomber sont révélés. Plusieurs à la
+    /// fois quand les Amoureux ou la Vengeuse entraînent quelqu'un dans leur chute.
+    case elimination(playerIDs: [UUID])
+    /// La Vengeuse éliminée désigne qui elle emmène.
+    case avengerStrike(playerID: UUID)
     /// Mr. White éliminé tente de deviner le mot des civils.
     case mrWhiteGuess(playerID: UUID)
     /// Manche terminée.

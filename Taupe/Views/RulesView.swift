@@ -15,6 +15,7 @@ struct RulesView: View {
                         intro
                         rolesSection
                         flowSection
+                        specialSection
                         scoreSection
                         Color.clear.frame(height: 12)
                     }
@@ -112,6 +113,49 @@ struct RulesView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
+                    .font(Theme.body(15))
+                    .foregroundStyle(Theme.ink)
+                Text(text)
+                    .font(Theme.body(14))
+                    .foregroundStyle(Theme.inkMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var specialSection: some View {
+        Panel {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Pouvoirs et variantes")
+                    .font(Theme.heading(17))
+                    .foregroundStyle(Theme.ink)
+
+                Text("À activer dans les options avancées. Les pouvoirs sont tirés au sort en plus des rôles ; les variantes s'appliquent à toute la table.")
+                    .font(Theme.caption(13))
+                    .foregroundStyle(Theme.inkFaint)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                ForEach(SpecialRole.allCases) { role in
+                    specialRow(symbol: role.symbol, name: role.displayName, text: role.summary)
+                }
+                ForEach(TableRule.allCases) { rule in
+                    specialRow(symbol: rule.symbol, name: rule.displayName, text: rule.summary)
+                }
+            }
+        }
+    }
+
+    private func specialRow(symbol: String, name: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Theme.amber)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(Theme.amber.opacity(0.14)))
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name)
                     .font(Theme.body(15))
                     .foregroundStyle(Theme.ink)
                 Text(text)
