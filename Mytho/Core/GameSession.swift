@@ -22,6 +22,28 @@ final class GameSession: ObservableObject {
 
     @Published var engine: GameEngine?
 
+    /// Instantanés du moteur avant chaque action : le moteur est une valeur
+    /// pure, revenir en arrière est un simple dépilage.
+    private var history: [GameEngine] = []
+    private let historyLimit = 40
+
+    var canGoBack: Bool {
+        guard let engine else { return false }
+        return !history.isEmpty && !engine.isFinished
+    }
+
+    /// Annule la dernière action (mauvais appui, vote désigné trop vite…).
+    func goBack() {
+        guard canGoBack, let previous = history.popLast() else { return }
+        engine = previous
+    }
+
+    private func remember() {
+        guard let engine else { return }
+        history.append(engine)
+        if history.count > historyLimit { history.removeFirst() }
+    }
+
     /// Les dernières paires jouées, pour ne pas retomber dessus tout de suite.
     private var recentPairs: [WordPair] = []
     private let recentPairMemory = 30
@@ -96,6 +118,7 @@ final class GameSession: ObservableObject {
 
     func startRound() {
         creditedRound = false
+        history.removeAll()
         var generator = SystemRandomNumberGenerator()
 
         var roundConfig = config
@@ -133,6 +156,7 @@ final class GameSession: ObservableObject {
 
     @discardableResult
     func pickCard(at index: Int) -> Role? {
+        remember()
         guard var current = engine else { return nil }
         let role = current.pickCard(at: index)
         engine = current
@@ -140,6 +164,7 @@ final class GameSession: ObservableObject {
     }
 
     func advanceDealing() {
+        remember()
         guard var current = engine else { return }
         var generator = SystemRandomNumberGenerator()
         current.advanceDealing(using: &generator)
@@ -147,18 +172,21 @@ final class GameSession: ObservableObject {
     }
 
     func startVote() {
+        remember()
         guard var current = engine else { return }
         current.startVote()
         engine = current
     }
 
     func eliminate(playerID: UUID) {
+        remember()
         guard var current = engine else { return }
         current.eliminate(playerID: playerID)
         engine = current
     }
 
     func resolveElimination() {
+        remember()
         guard var current = engine else { return }
         var generator = SystemRandomNumberGenerator()
         current.resolveElimination(using: &generator)
@@ -167,6 +195,7 @@ final class GameSession: ObservableObject {
     }
 
     func avengerStrikes(playerID: UUID) {
+        remember()
         guard var current = engine else { return }
         var generator = SystemRandomNumberGenerator()
         current.avengerStrikes(playerID: playerID, using: &generator)
@@ -175,6 +204,7 @@ final class GameSession: ObservableObject {
 
     @discardableResult
     func submitMrWhiteGuess(_ guess: String) -> Bool {
+        remember()
         guard var current = engine else { return false }
         var generator = SystemRandomNumberGenerator()
         let correct = current.submitMrWhiteGuess(guess, using: &generator)

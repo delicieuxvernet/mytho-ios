@@ -38,46 +38,79 @@ struct RootView: View {
             }
             .animation(Theme.spring, value: transitionKey)
             // Barre réservée en haut plutôt qu'un bouton en surimpression : sinon
-            // il recouvrirait la barre de progression de la distribution.
+            // elle recouvrirait la barre de progression de la distribution.
             .safeAreaInset(edge: .top, spacing: 0) {
                 if let engine = session.engine, !engine.isFinished {
-                    HStack {
+                    HStack(spacing: 8) {
                         quitButton
+                        if session.canGoBack { backButton }
                         Spacer()
                     }
                     .padding(.horizontal, 8)
                 }
             }
+
+            if confirmQuit {
+                QuitConfirmOverlay(
+                    onQuit: {
+                        confirmQuit = false
+                        session.backToSetup()
+                    },
+                    onCancel: { confirmQuit = false }
+                )
+                .transition(.opacity)
+                .zIndex(1)
+            }
         }
+        .animation(Theme.snap, value: confirmQuit)
         .statusBarHidden(session.engine != nil)
         .persistentSystemOverlays(session.engine != nil ? .hidden : .automatic)
-        .confirmationDialog(
-            "Abandonner la manche en cours ?",
-            isPresented: $confirmQuit,
-            titleVisibility: .visible
-        ) {
-            Button("Abandonner", role: .destructive) { session.backToSetup() }
-            Button("Continuer à jouer", role: .cancel) {}
-        } message: {
-            Text("Les mots et les rôles seront retirés. Le classement des manches précédentes est conservé.")
-        }
     }
 
     /// Sortie de secours : composition ratée, joueur qui s'en va, téléphone
-    /// passé au mauvais moment. Sans ça, la manche ne peut plus être quittée.
+    /// passé au mauvais moment. Libellée en toutes lettres : la croix seule
+    /// ne disait pas ce qu'elle faisait.
     private var quitButton: some View {
         Button {
             Haptics.tap()
             confirmQuit = true
         } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(Theme.inkMuted)
-                .frame(width: Theme.touchTarget, height: Theme.touchTarget)
-                .background(Circle().fill(Theme.surface))
+            HStack(spacing: 6) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .accessibilityHidden(true)
+                Text("Quitter")
+                    .font(Theme.caption(13))
+            }
+            .foregroundStyle(Theme.inkMuted)
+            .padding(.horizontal, 13)
+            .frame(height: Theme.touchTarget)
+            .background(Capsule().fill(Theme.surface))
         }
         .buttonStyle(PressedStyle())
-        .accessibilityLabel("Abandonner la manche")
+        .accessibilityLabel("Quitter la partie")
+    }
+
+    /// Un pas en arrière : mauvais appui, joueur éliminé trop vite.
+    private var backButton: some View {
+        Button {
+            Haptics.tap()
+            withAnimation(Theme.spring) { session.goBack() }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.uturn.backward")
+                    .font(.system(size: 12, weight: .bold))
+                    .accessibilityHidden(true)
+                Text("Retour")
+                    .font(Theme.caption(13))
+            }
+            .foregroundStyle(Theme.inkMuted)
+            .padding(.horizontal, 13)
+            .frame(height: Theme.touchTarget)
+            .background(Capsule().fill(Theme.surface))
+        }
+        .buttonStyle(PressedStyle())
+        .accessibilityLabel("Revenir à l'étape précédente")
     }
 
     @ViewBuilder
@@ -127,5 +160,57 @@ struct RootView: View {
         case .mrWhiteGuess(let id): return "white-\(id)"
         case .finished: return "result"
         }
+    }
+}
+
+/// Confirmation de sortie : fond entièrement flouté pour que la question soit
+/// le seul point net de l'écran, et un libellé qui dit exactement ce qui va
+/// se passer.
+private struct QuitConfirmOverlay: View {
+    let onQuit: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea()
+                .onTapGesture(perform: onCancel)
+
+            VStack(spacing: 18) {
+                Image(systemName: "door.left.hand.open")
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(Theme.crimson)
+                    .accessibilityHidden(true)
+
+                VStack(spacing: 8) {
+                    Text("Arrêter la partie ?")
+                        .font(Theme.heading(21))
+                        .foregroundStyle(Theme.ink)
+                    Text("La manche en cours sera abandonnée et vous reviendrez au menu principal. Le classement est conservé.")
+                        .font(Theme.body(14))
+                        .foregroundStyle(Theme.inkMuted)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                VStack(spacing: 2) {
+                    PrimaryButton(title: "Arrêter la partie", systemImage: "xmark", tint: Theme.crimson, action: onQuit)
+                    GhostButton(title: "Continuer à jouer", action: onCancel)
+                }
+            }
+            .padding(22)
+            .background(
+                RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
+                    .fill(Theme.night)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
+                            .strokeBorder(Theme.hairline, lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.5), radius: 30, y: 14)
+            )
+            .padding(.horizontal, 34)
+        }
+        .accessibilityAddTraits(.isModal)
     }
 }

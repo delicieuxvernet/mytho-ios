@@ -2,32 +2,37 @@ import SwiftUI
 
 // MARK: - Description
 
-/// Ordre de parole du tour. Chaque joueur décrit son mot, puis la table débat.
+/// Ordre de parole du tour. Le joueur en cours est sous le projecteur, avec un
+/// chrono : ça rythme la table et personne ne se demande à qui c'est.
 struct DescribeView: View {
     @EnvironmentObject private var session: GameSession
     let engine: GameEngine
     let round: Int
 
     @State private var currentSpeaker = 0
+    @State private var timeLeft = 0
+    @State private var timeUp = false
+
+    private let clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    private var timerSeconds: Int { engine.config.describeTimerSeconds }
+    private var speakers: [Player] { engine.orderedSpeakers }
+    private var everyoneSpoke: Bool { currentSpeaker >= speakers.count }
 
     var body: some View {
-        VStack(spacing: 18) {
-            VStack(spacing: 8) {
-                PhasePill(text: "Tour \(round)")
-                Text("Décrivez votre mot")
-                    .font(Theme.heading(24))
-                    .foregroundStyle(Theme.ink)
-                Text("Une phrase chacun, dans cet ordre. Ni trop précis, ni trop vague.")
-                    .font(Theme.body(14))
-                    .foregroundStyle(Theme.inkMuted)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 30)
+        VStack(spacing: 14) {
+            PhasePill(text: "Tour \(round)")
+                .padding(.top, 6)
+
+            if everyoneSpoke {
+                doneCard
+            } else {
+                spotlightCard
             }
-            .padding(.top, 10)
 
             ScrollView {
                 VStack(spacing: 8) {
-                    ForEach(Array(engine.orderedSpeakers.enumerated()), id: \.element.id) { index, player in
+                    ForEach(Array(speakers.enumerated()), id: \.element.id) { index, player in
                         SpeakerRow(
                             position: index + 1,
                             name: player.name,
@@ -36,9 +41,7 @@ struct DescribeView: View {
                             isMime: player.id == engine.mimePlayerID
                         ) {
                             Haptics.tap()
-                            withAnimation(Theme.spring) {
-                                currentSpeaker = index < currentSpeaker ? index : index + 1
-                            }
+                            withAnimation(Theme.spring) { jump(to: index) }
                         }
                     }
 
@@ -57,12 +60,138 @@ struct DescribeView: View {
                 .padding(.bottom, 12)
             }
 
-            PrimaryButton(title: "Passer au vote", systemImage: "hand.raised.fill") {
-                session.startVote()
+            if everyoneSpoke {
+                PrimaryButton(title: "Passer au vote", systemImage: "hand.raised.fill") {
+                    session.startVote()
+                }
+                .padding(.horizontal, Theme.gutter)
+            } else {
+                VStack(spacing: 2) {
+                    PrimaryButton(title: "Joueur suivant", systemImage: "arrow.right") {
+                        withAnimation(Theme.spring) { jump(to: currentSpeaker + 1) }
+                    }
+                    GhostButton(title: "Passer directement au vote", systemImage: "hand.raised.fill") {
+                        session.startVote()
+                    }
+                }
+                .padding(.horizontal, Theme.gutter)
             }
-            .padding(.horizontal, Theme.gutter)
         }
         .padding(.bottom, 12)
+        .onAppear { resetTimer() }
+        .onReceive(clock) { _ in tick() }
+    }
+
+    // MARK: Projecteur
+
+    private var currentName: String {
+        speakers.indices.contains(currentSpeaker) ? speakers[currentSpeaker].name : ""
+    }
+
+    private var isMimeTurn: Bool {
+        speakers.indices.contains(currentSpeaker) && speakers[currentSpeaker].id == engine.mimePlayerID
+    }
+
+    private var spotlightCard: some View {
+        Panel(padding: 18) {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("C'est à")
+                        .font(Theme.body(14))
+                        .foregroundStyle(Theme.inkMuted)
+                    Text(currentName)
+                        .font(Theme.title(27))
+                        .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text(isMimeTurn ? "de mimer son mot, sans un bruit." : "de décrire son mot en une phrase.")
+                        .font(Theme.body(14))
+                        .foregroundStyle(timeUp ? Theme.crimson : Theme.inkMuted)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if timeUp {
+                        Label("Temps écoulé !", systemImage: "hourglass.bottomhalf.filled")
+                            .font(Theme.caption(13))
+                            .foregroundStyle(Theme.crimson)
+                            .padding(.top, 2)
+                    }
+                }
+
+                Spacer(minLength: 8)
+
+                if timerSeconds > 0 {
+                    countdownRing
+                }
+            }
+        }
+        .padding(.horizontal, Theme.gutter)
+    }
+
+    private var countdownRing: some View {
+        ZStack {
+            Circle()
+                .stroke(Theme.surfaceStrong, lineWidth: 6)
+            Circle()
+                .trim(from: 0, to: CGFloat(timeLeft) / CGFloat(max(1, timerSeconds)))
+                .stroke(
+                    timeUp ? Theme.crimson : (timeLeft <= 5 ? Theme.amber : Theme.brandLight),
+                    style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .animation(.linear(duration: 1), value: timeLeft)
+
+            Text(timeUp ? "0" : "\(timeLeft)")
+                .font(Theme.heading(22))
+                .foregroundStyle(timeUp ? Theme.crimson : Theme.ink)
+                .contentTransition(.numericText(countsDown: true))
+        }
+        .frame(width: 66, height: 66)
+        .accessibilityLabel("Temps restant : \(timeLeft) secondes")
+    }
+
+    private var doneCard: some View {
+        Panel(padding: 18) {
+            HStack(spacing: 12) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(Theme.mint)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Tout le monde a parlé")
+                        .font(Theme.heading(18))
+                        .foregroundStyle(Theme.ink)
+                    Text("Débattez à voix haute, puis passez au vote.")
+                        .font(Theme.body(14))
+                        .foregroundStyle(Theme.inkMuted)
+                }
+                Spacer(minLength: 0)
+            }
+        }
+        .padding(.horizontal, Theme.gutter)
+    }
+
+    // MARK: Chrono
+
+    private func jump(to index: Int) {
+        currentSpeaker = min(index, speakers.count)
+        resetTimer()
+    }
+
+    private func resetTimer() {
+        timeLeft = timerSeconds
+        timeUp = false
+    }
+
+    private func tick() {
+        guard timerSeconds > 0, !timeUp, !everyoneSpoke else { return }
+        if timeLeft > 1 {
+            timeLeft -= 1
+            if timeLeft <= 5 { Haptics.tap() }
+        } else {
+            timeLeft = 0
+            timeUp = true
+            Haptics.warning()
+        }
     }
 }
 

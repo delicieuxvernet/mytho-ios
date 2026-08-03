@@ -88,6 +88,8 @@ struct GameConfig: Hashable, Codable, Sendable {
     var specialRoles: Set<SpecialRole>
     /// Variantes qui s'appliquent à toute la table.
     var tableRules: Set<TableRule>
+    /// Temps de parole par joueur en phase de description. 0 = pas de chrono.
+    var describeTimerSeconds: Int
 
     init(
         playerNames: [String] = [],
@@ -98,7 +100,8 @@ struct GameConfig: Hashable, Codable, Sendable {
         easyMode: Bool = false,
         randomMode: Bool = false,
         specialRoles: Set<SpecialRole> = [],
-        tableRules: Set<TableRule> = []
+        tableRules: Set<TableRule> = [],
+        describeTimerSeconds: Int = 30
     ) {
         self.playerNames = playerNames
         self.undercoverCount = undercoverCount
@@ -109,6 +112,7 @@ struct GameConfig: Hashable, Codable, Sendable {
         self.randomMode = randomMode
         self.specialRoles = specialRoles
         self.tableRules = tableRules
+        self.describeTimerSeconds = describeTimerSeconds
     }
 
     // Réglages sauvegardés avant l'arrivée des pouvoirs : les deux champs
@@ -117,6 +121,7 @@ struct GameConfig: Hashable, Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case playerNames, undercoverCount, mrWhiteCount, categoryIDs
         case mrWhiteCanStart, easyMode, randomMode, specialRoles, tableRules
+        case describeTimerSeconds
     }
 
     init(from decoder: Decoder) throws {
@@ -130,6 +135,7 @@ struct GameConfig: Hashable, Codable, Sendable {
         randomMode = try container.decodeIfPresent(Bool.self, forKey: .randomMode) ?? false
         specialRoles = try container.decodeIfPresent(Set<SpecialRole>.self, forKey: .specialRoles) ?? []
         tableRules = try container.decodeIfPresent(Set<TableRule>.self, forKey: .tableRules) ?? []
+        describeTimerSeconds = try container.decodeIfPresent(Int.self, forKey: .describeTimerSeconds) ?? 30
     }
 
     var playerCount: Int { playerNames.count }

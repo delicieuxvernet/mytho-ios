@@ -42,9 +42,11 @@ final class ScreenshotTests: XCTestCase {
             tap(app.buttons["C'est mémorisé"], timeout: 5)
         }
 
-        // Description puis vote
+        // Description puis vote. Tant que tout le monde n'a pas parlé, le CTA
+        // principal est « Joueur suivant » et le vote passe par le bouton
+        // secondaire « Passer directement au vote ».
         capture("ordre-de-parole")
-        tap(app.buttons["Passer au vote"], timeout: 5)
+        tapGoToVote()
         capture("vote")
 
         // On élimine le premier joueur encore en lice.
@@ -58,6 +60,15 @@ final class ScreenshotTests: XCTestCase {
 
     /// Les prénoms du profil de test injecté par `-uiTesting`.
     private static let testPlayers = ["Chloé", "Malik", "Inès", "Tom", "Sarah"]
+
+    /// Ouvre le vote, quel que soit l'état de la phase de description.
+    private func tapGoToVote() {
+        if app.buttons["Passer au vote"].waitForExistence(timeout: 2) {
+            app.buttons["Passer au vote"].tap()
+        } else {
+            tap(app.buttons["Passer directement au vote"], timeout: 5)
+        }
+    }
 
     /// Touche la carte de vote du premier joueur encore en lice, jamais un
     /// bouton par index : lors du run 30810486415, `element(boundBy: 1)` avait
@@ -89,6 +100,8 @@ final class ScreenshotTests: XCTestCase {
                 app.buttons["Il passe son tour"].tap()
             } else if app.buttons["Passer au vote"].exists {
                 app.buttons["Passer au vote"].tap()
+            } else if app.buttons["Passer directement au vote"].exists {
+                app.buttons["Passer directement au vote"].tap()
             } else if app.buttons["Éliminer"].exists {
                 app.buttons["Éliminer"].tap()
             } else {

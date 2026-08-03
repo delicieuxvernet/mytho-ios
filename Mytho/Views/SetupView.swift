@@ -257,7 +257,7 @@ struct SetupView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Button {
                     Haptics.tap()
-                    withAnimation(Theme.spring) { showAdvanced.toggle() }
+                    withAnimation(Theme.snap) { showAdvanced.toggle() }
                 } label: {
                     HStack {
                         Label("Options avancées", systemImage: "slider.horizontal.3")
@@ -270,6 +270,10 @@ struct SetupView: View {
                             .rotationEffect(.degrees(showAdvanced ? 0 : -90))
                     }
                     .frame(height: Theme.touchTarget)
+                    // Sans contentShape, seuls le texte et le chevron acceptent
+                    // l'appui — le reste de la ligne l'ignore (retour device
+                    // d'Arthur : « ça ne l'ouvre pas bien »).
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(PressedStyle())
 
@@ -289,6 +293,14 @@ struct SetupView: View {
                             title: "Mode aléatoire",
                             subtitle: "Le nombre d'infiltrés change à chaque manche.",
                             isOn: $session.config.randomMode
+                        )
+                        OptionToggle(
+                            title: "Chrono de description",
+                            subtitle: "30 secondes par joueur pour décrire son mot.",
+                            isOn: Binding(
+                                get: { session.config.describeTimerSeconds > 0 },
+                                set: { session.config.describeTimerSeconds = $0 ? 30 : 0 }
+                            )
                         )
 
                         divider(label: "Pouvoirs (un joueur tiré au sort)")
