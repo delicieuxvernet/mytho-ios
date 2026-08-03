@@ -58,9 +58,17 @@ final class SpecialRolesTests: XCTestCase {
     }
 
     func testAssignmentIsDeterministicForAGivenSeed() {
+        // Les UUID des joueurs sont régénérés à chaque moteur (hors graine) :
+        // le déterminisme se mesure sur QUI reçoit quoi, donc par nom.
+        func namesByRole(_ engine: GameEngine) -> [SpecialRole: [String]] {
+            engine.specialRoles.mapValues { ids in
+                ids.compactMap { id in engine.player(id: id)?.name }
+            }
+        }
+
         let first = makeEngine(players: 8, specialRoles: [.lovers, .avenger], seed: 99)
         let second = makeEngine(players: 8, specialRoles: [.lovers, .avenger], seed: 99)
-        XCTAssertEqual(first.specialRoles, second.specialRoles)
+        XCTAssertEqual(namesByRole(first), namesByRole(second))
     }
 
     // MARK: Amoureux
