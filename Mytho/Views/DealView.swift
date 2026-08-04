@@ -291,40 +291,47 @@ private struct WordCard: View {
         RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
             .fill(Color.white)
             .overlay(
-                VStack(spacing: 14) {
-                    if showRole {
-                        RoleBadge(role: role, compact: true)
-                    }
-
-                    if let word {
-                        Text(word)
-                            .font(Theme.title(30))
-                            .foregroundStyle(Theme.night)
-                            .multilineTextAlignment(.center)
-                            .minimumScaleFactor(0.5)
-                            .lineLimit(3)
-                            .padding(.horizontal, 18)
-                    } else {
-                        VStack(spacing: 10) {
-                            Image(systemName: Role.mrWhite.symbol)
-                                .font(.system(size: 34, weight: .bold))
-                                .foregroundStyle(Theme.amber)
-                            Text("Aucun mot")
-                                .font(Theme.title(26))
-                                .foregroundStyle(Theme.night)
-                            Text("Tu es Mr. White.\nÉcoute, déduis, improvise.")
-                                .font(Theme.body(14))
-                                .foregroundStyle(Theme.night.opacity(0.6))
-                                .multilineTextAlignment(.center)
-                        }
-                        .padding(.horizontal, 18)
-                    }
-                }
-            )
-            .overlay(
                 RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
                     .strokeBorder(Theme.nightDeep, lineWidth: Theme.stroke)
             )
             .shadow(color: Theme.nightDeep, radius: 0, y: Theme.drop)
+            // Le contenu se pose APRÈS l'ombre : une ombre de rayon 0 recopie à
+            // l'identique tout ce qu'elle porte, et redessinait le mot net 5 pt
+            // plus bas (dédoublement vu sur appareil). Un overlay plutôt qu'un
+            // ZStack : il ne participe pas au dimensionnement, la carte garde
+            // donc exactement son ratio.
+            .overlay(frontContent)
+    }
+
+    private var frontContent: some View {
+        VStack(spacing: 14) {
+            if showRole {
+                RoleBadge(role: role, compact: true)
+            }
+
+            if let word {
+                Text(word)
+                    .font(Theme.title(30))
+                    .foregroundStyle(Theme.night)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(3)
+                    .padding(.horizontal, 18)
+            } else {
+                VStack(spacing: 10) {
+                    Image(systemName: Role.mrWhite.symbol)
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundStyle(Theme.amber)
+                    Text("Aucun mot")
+                        .font(Theme.title(26))
+                        .foregroundStyle(Theme.night)
+                    Text("Tu es Mr. White.\nÉcoute, déduis, improvise.")
+                        .font(Theme.body(14))
+                        .foregroundStyle(Theme.night.opacity(0.6))
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 18)
+            }
+        }
     }
 }

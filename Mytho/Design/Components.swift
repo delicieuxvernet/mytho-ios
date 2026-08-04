@@ -299,6 +299,7 @@ struct AvatarView: View {
 /// contour encré. Vectoriel : net à toutes tailles.
 struct ReptileEyeView: View {
     @Environment(\.skin) private var skin
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var size: CGFloat = 120
     var blinking: Bool = false
@@ -330,14 +331,23 @@ struct ReptileEyeView: View {
                 .offset(x: -size * 0.08, y: -size * 0.12)
         }
         .frame(width: size, height: size)
-        .onAppear {
-            guard blinking, !UIAccessibility.isReduceMotionEnabled else { return }
-            // Un clignement lent : vivant sans être agité.
-            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
-                pupilScale = 0.82
-            }
-        }
+        .onAppear { updateBlink() }
+        // La lecture au seul onAppear laissait l'œil cligner quand le réglage
+        // système était activé app ouverte.
+        .onChange(of: reduceMotion) { _, _ in updateBlink() }
         .accessibilityLabel("Œil d'infiltré")
+    }
+
+    /// Un clignement lent : vivant sans être agité, et coupé net dès que
+    /// l'utilisateur demande moins d'animations.
+    private func updateBlink() {
+        guard blinking, !reduceMotion else {
+            withAnimation(.easeInOut(duration: 0.2)) { pupilScale = 1 }
+            return
+        }
+        withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
+            pupilScale = 0.82
+        }
     }
 }
 

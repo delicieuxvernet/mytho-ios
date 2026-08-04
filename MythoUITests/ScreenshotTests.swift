@@ -20,6 +20,14 @@ final class ScreenshotTests: XCTestCase {
     }
 
     func testCaptureAFullRound() {
+        // L'app ouvre désormais sur le catalogue de jeux : il faut le traverser
+        // avant d'atteindre les réglages d'Undercover.
+        capture("hub")
+        tap(
+            app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Undercover")).firstMatch,
+            timeout: 5
+        )
+
         capture("accueil")
 
         // Règles

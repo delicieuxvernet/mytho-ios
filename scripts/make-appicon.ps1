@@ -1,6 +1,10 @@
-# Génère l'icône de l'app (1024x1024, sans canal alpha — exigence App Store).
-# Chapeau de feutre blanc sur dégradé violet nuit.
+# Génère l'icône de l'app : l'œil reptilien à plat, signature de Mytho.
+# 1024x1024, SANS canal alpha — l'App Store refuse les icônes transparentes.
 #   powershell -ExecutionPolicy Bypass -File scripts\make-appicon.ps1
+#
+# DA v2 « jeu de société dessiné » : aplats francs, gros contours encrés, aucun
+# dégradé, aucun flou. Les formes reprennent celles de ReptileEyeView pour que
+# l'icône et l'app racontent la même chose.
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
@@ -9,50 +13,63 @@ $size = 1024
 $out = Join-Path $PSScriptRoot '..\Mytho\Resources\Assets.xcassets\AppIcon.appiconset\AppIcon.png'
 $out = [System.IO.Path]::GetFullPath($out)
 
-# 24 bits par pixel : pas de canal alpha, l'App Store refuse les icônes transparentes.
+# 24 bits par pixel : pas de canal alpha.
 $bmp = New-Object System.Drawing.Bitmap($size, $size, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
 $g = [System.Drawing.Graphics]::FromImage($bmp)
 $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-$g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
 
-# Fond : dégradé diagonal violet -> nuit
-$rect = New-Object System.Drawing.Rectangle(0, 0, $size, $size)
-$c1 = [System.Drawing.Color]::FromArgb(255, 108, 92, 240)
-$c2 = [System.Drawing.Color]::FromArgb(255, 14, 17, 45)
-$brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush($rect, $c1, $c2, 55.0)
-$g.FillRectangle($brush, $rect)
-$brush.Dispose()
+# Palette alignée sur Theme.swift.
+$violet   = [System.Drawing.Color]::FromArgb(255, 108, 92, 240)   # Theme.brand
+$encre    = [System.Drawing.Color]::FromArgb(255, 34, 30, 51)     # Skin.day.outline
+$vertNuit = [System.Drawing.Color]::FromArgb(255, 18, 59, 42)
+$menthe   = [System.Drawing.Color]::FromArgb(255, 52, 211, 153)   # Theme.mint
+$iris     = [System.Drawing.Color]::FromArgb(255, 124, 232, 184)
+$pupille  = [System.Drawing.Color]::FromArgb(255, 4, 21, 13)
+$reflet   = [System.Drawing.Color]::FromArgb(235, 255, 255, 255)
 
-# Halo doux derrière le chapeau
-$halo = New-Object System.Drawing.Drawing2D.GraphicsPath
-$halo.AddEllipse(160, 190, 704, 704)
-$haloBrush = New-Object System.Drawing.Drawing2D.PathGradientBrush($halo)
-$haloBrush.CenterColor = [System.Drawing.Color]::FromArgb(70, 255, 255, 255)
-$haloBrush.SurroundColors = @([System.Drawing.Color]::FromArgb(0, 255, 255, 255))
-$g.FillPath($haloBrush, $halo)
-$haloBrush.Dispose(); $halo.Dispose()
+$g.Clear($violet)
 
-$white = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 255, 255, 255))
-$band = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 24, 27, 58))
+function New-CircleRect([double]$cx, [double]$cy, [double]$r) {
+    New-Object System.Drawing.RectangleF(
+        [float]($cx - $r), [float]($cy - $r), [float]($r * 2), [float]($r * 2))
+}
 
-# Calotte : flancs droits et dessus pince, la silhouette d'un feutre.
-$crown = New-Object System.Drawing.Drawing2D.GraphicsPath
-$crown.AddBezier(320, 600, 318, 430, 336, 340, 372, 306)   # flanc gauche
-$crown.AddBezier(372, 306, 404, 278, 440, 322, 512, 322)   # creux gauche du pincement
-$crown.AddBezier(512, 322, 584, 322, 620, 278, 652, 306)   # creux droit
-$crown.AddBezier(652, 306, 688, 340, 706, 430, 704, 600)   # flanc droit
-$crown.AddLine(704, 600, 320, 600)
-$crown.CloseFigure()
-$g.FillPath($white, $crown)
-$crown.Dispose()
+# Marge volontairement large : l'icône survit au masque arrondi d'iOS comme au
+# recadrage circulaire de la Watch sans que l'œil soit rogné.
+$cx = $size / 2.0
+$cy = $size / 2.0
+$rExt = $size * 0.34
 
-# Bandeau sombre, posé juste au-dessus de l'aile.
-$g.FillRectangle($band, 318, 512, 388, 96)
+$brushGlobe = New-Object System.Drawing.SolidBrush($vertNuit)
+$g.FillEllipse($brushGlobe, (New-CircleRect $cx $cy $rExt))
+$penEncre = New-Object System.Drawing.Pen($encre, [float]($size * 0.042))
+$g.DrawEllipse($penEncre, (New-CircleRect $cx $cy $rExt))
 
-# Aile : large ellipse, releve legerement sur les cotes.
-$g.FillEllipse($white, 148, 566, 728, 188)
+$penMenthe = New-Object System.Drawing.Pen($menthe, [float]($size * 0.030))
+$g.DrawEllipse($penMenthe, (New-CircleRect $cx $cy ($rExt * 0.86)))
 
-$white.Dispose(); $band.Dispose(); $g.Dispose()
+$rIris = $rExt * 0.56
+$brushIris = New-Object System.Drawing.SolidBrush($iris)
+$g.FillEllipse($brushIris, (New-CircleRect $cx $cy $rIris))
+$penIris = New-Object System.Drawing.Pen($encre, [float]($size * 0.030))
+$g.DrawEllipse($penIris, (New-CircleRect $cx $cy $rIris))
+
+# Pupille fendue verticale : c'est elle qui rend l'œil reptilien.
+$pw = $rIris * 0.30
+$ph = $rIris * 1.62
+$brushPupille = New-Object System.Drawing.SolidBrush($pupille)
+$g.FillEllipse($brushPupille, (New-Object System.Drawing.RectangleF(
+    [float]($cx - $pw / 2), [float]($cy - $ph / 2), [float]$pw, [float]$ph)))
+
+# Reflet : un aplat franc, jamais un dégradé.
+$brushReflet = New-Object System.Drawing.SolidBrush($reflet)
+$g.FillEllipse($brushReflet, (New-Object System.Drawing.RectangleF(
+    [float]($cx - $rIris * 0.46), [float]($cy - $rIris * 0.52),
+    [float]($rIris * 0.34), [float]($rIris * 0.21))))
+
+$brushGlobe.Dispose(); $penEncre.Dispose(); $penMenthe.Dispose()
+$brushIris.Dispose(); $penIris.Dispose(); $brushPupille.Dispose()
+$brushReflet.Dispose(); $g.Dispose()
 
 $bmp.Save($out, [System.Drawing.Imaging.ImageFormat]::Png)
 $bmp.Dispose()

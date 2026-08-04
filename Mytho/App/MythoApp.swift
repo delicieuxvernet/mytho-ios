@@ -22,6 +22,8 @@ struct MythoApp: App {
 struct RootView: View {
     @EnvironmentObject private var session: GameSession
     @State private var confirmQuit = false
+    /// Nul tant qu'aucun jeu n'est choisi : l'app s'ouvre sur le catalogue.
+    @State private var selectedGameID: String?
 
     var body: some View {
         ZStack {
@@ -30,8 +32,14 @@ struct RootView: View {
             Group {
                 if let engine = session.engine {
                     gameScreen(for: engine)
-                } else {
+                } else if selectedGameID == GameRegistry.undercoverID {
                     SetupView()
+                        .transition(.forward)
+                } else {
+                    // Repli sur le catalogue, jamais sur Undercover : le jour où
+                    // un autre jeu devient jouable, le choisir ne doit pas
+                    // lancer silencieusement celui-ci.
+                    GameHubView { game in selectedGameID = game.id }
                         .transition(.forward)
                 }
             }
@@ -39,10 +47,18 @@ struct RootView: View {
             // Barre réservée en haut plutôt qu'un bouton en surimpression : sinon
             // elle recouvrirait la barre de progression de la distribution.
             .safeAreaInset(edge: .top, spacing: 0) {
-                if let engine = session.engine, !engine.isFinished {
+                if let engine = session.engine {
+                    if !engine.isFinished {
+                        HStack(spacing: 8) {
+                            quitButton
+                            if session.canGoBack { backButton }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 8)
+                    }
+                } else if selectedGameID == GameRegistry.undercoverID {
                     HStack(spacing: 8) {
-                        quitButton
-                        if session.canGoBack { backButton }
+                        gamesButton
                         Spacer()
                     }
                     .padding(.horizontal, 8)
@@ -108,6 +124,33 @@ struct RootView: View {
         .accessibilityLabel("Quitter la partie")
     }
 
+    /// Retour au catalogue depuis les réglages : on n'a pas encore engagé de
+    /// manche, changer d'avis ne doit rien coûter.
+    private var gamesButton: some View {
+        Button {
+            Haptics.tap()
+            selectedGameID = nil
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "square.grid.2x2.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .accessibilityHidden(true)
+                Text("Jeux")
+                    .font(Theme.caption(13))
+            }
+            .foregroundStyle(currentSkin.inkMuted)
+            .padding(.horizontal, 13)
+            .frame(height: Theme.touchTarget)
+            .background(
+                Capsule()
+                    .fill(currentSkin.panel)
+                    .overlay(Capsule().strokeBorder(currentSkin.outline, lineWidth: 2))
+            )
+        }
+        .buttonStyle(PressedStyle())
+        .accessibilityLabel("Choisir un autre jeu")
+    }
+
     /// Un pas en arrière : mauvais appui, joueur éliminé trop vite.
     private var backButton: some View {
         Button {
@@ -171,7 +214,9 @@ struct RootView: View {
 
     /// Identifiant textuel de l'écran courant : sert de déclencheur d'animation.
     private var transitionKey: String {
-        guard let phase = session.engine?.phase else { return "setup" }
+        guard let phase = session.engine?.phase else {
+            return selectedGameID == GameRegistry.undercoverID ? "setup" : "hub"
+        }
         switch phase {
         case .dealing(let index): return "deal-\(index)"
         case .describing(let round): return "describe-\(round)"
@@ -209,7 +254,7 @@ private struct QuitConfirmOverlay: View {
                     Text("Arrêter la partie ?")
                         .font(Theme.heading(21))
                         .foregroundStyle(skin.ink)
-                    Text("La manche en cours sera abandonnée et vous reviendrez au menu principal. Le classement est conservé.")
+                    Text("La manche en cours sera abandonnée et vous reviendrez aux réglages de la partie. Le classement est conservé.")
                         .font(Theme.body(14))
                         .foregroundStyle(skin.inkMuted)
                         .multilineTextAlignment(.center)

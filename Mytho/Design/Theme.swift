@@ -227,70 +227,19 @@ enum Haptics {
 
 // MARK: - Fond commun
 
-/// Fond à plat + confettis géométriques discrets aux couleurs de la phase.
-/// Aucun flou : des formes dessinées, comme un plateau de jeu.
+/// Fond à plat, sans aucun motif : posées sur le papier crème, les formes
+/// géométriques isolées se lisaient comme des artefacts d'affichage (le cercle
+/// en haut à gauche chevauchait en plus les pastilles « Quitter » / « Retour »).
 struct Backdrop: View {
     var skin: Skin = .night
+    /// Rien ne s'appuie dessus tant que le fond est nu ; le paramètre reste là
+    /// parce que les appelants passent la teinte de phase à chaque changement.
     var accent: Color = Theme.brand
 
     var body: some View {
-        ZStack {
-            skin.background
-
-            // Confettis : déterministes (pas de scintillement au re-render).
-            GeometryReader { geo in
-                let w = geo.size.width
-                let h = geo.size.height
-
-                Circle()
-                    .strokeBorder(accent.opacity(0.14), lineWidth: 3)
-                    .frame(width: 90, height: 90)
-                    .position(x: w * 0.12, y: h * 0.10)
-                Circle()
-                    .fill(accent.opacity(0.10))
-                    .frame(width: 26, height: 26)
-                    .position(x: w * 0.88, y: h * 0.16)
-                TriangleShape()
-                    .fill(accent.opacity(0.12))
-                    .frame(width: 34, height: 30)
-                    .rotationEffect(.degrees(18))
-                    .position(x: w * 0.82, y: h * 0.78)
-                Circle()
-                    .strokeBorder(accent.opacity(0.10), lineWidth: 3)
-                    .frame(width: 54, height: 54)
-                    .position(x: w * 0.10, y: h * 0.86)
-                PlusShape()
-                    .fill(accent.opacity(0.12))
-                    .frame(width: 22, height: 22)
-                    .rotationEffect(.degrees(12))
-                    .position(x: w * 0.50, y: h * 0.94)
-            }
-        }
-        .allowsHitTesting(false)
-        .ignoresSafeArea()
-        .animation(.easeInOut(duration: 0.6), value: skin == .day)
-    }
-}
-
-/// Petit triangle plein, pour les confettis du fond.
-struct TriangleShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.closeSubpath()
-        return path
-    }
-}
-
-/// Petite croix pleine, pour les confettis du fond.
-struct PlusShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        let t = rect.width / 3
-        var path = Path()
-        path.addRect(CGRect(x: rect.minX + t, y: rect.minY, width: t, height: rect.height))
-        path.addRect(CGRect(x: rect.minX, y: rect.minY + t, width: rect.width, height: t))
-        return path
+        skin.background
+            .allowsHitTesting(false)
+            .ignoresSafeArea()
+            .animation(.easeInOut(duration: 0.6), value: skin == .day)
     }
 }

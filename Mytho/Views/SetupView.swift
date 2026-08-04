@@ -165,6 +165,10 @@ struct SetupView: View {
                     }
                     .font(Theme.caption(13))
                     .foregroundStyle(Theme.brandLight)
+                    // Sans hauteur imposée, la zone tappable se limite au
+                    // libellé : 16 pt de haut, sous le minimum de 44.
+                    .frame(minHeight: Theme.touchTarget)
+                    .contentShape(Rectangle())
                 }
 
                 CounterRow(
@@ -375,6 +379,8 @@ struct SetupView: View {
                     }
                     .font(Theme.caption(13))
                     .foregroundStyle(skin.inkMuted)
+                    .frame(minHeight: Theme.touchTarget)
+                    .contentShape(Rectangle())
                 }
                 LeaderboardList(rows: session.leaderboard, table: session.config.playerNames)
             }
