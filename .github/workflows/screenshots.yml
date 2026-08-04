@@ -31,21 +31,30 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
+      # Priorité au plus grand iPhone (Pro Max) : ses captures font la taille
+      # 6,9 pouces exigée par la fiche App Store. Repli sur n'importe quel
+      # iPhone, quitte à le créer.
       - name: Resolve an iPhone simulator
         id: sim
         run: |
           set -euo pipefail
-          UDID=$(xcrun simctl list devices available --json | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.isAvailable and (.name | startswith("iPhone"))) | .udid] | first // empty')
+          UDID=$(xcrun simctl list devices available --json | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.isAvailable and (.name | test("iPhone.*Pro Max")))] | sort_by(.name) | (last | .udid) // empty')
           if [ -z "$UDID" ]; then
             RUNTIME=$(xcrun simctl list runtimes --json | jq -r '[.runtimes[] | select(.isAvailable and (.identifier | contains("iOS"))) | .identifier] | last // empty')
-            DEVTYPE=$(xcrun simctl list devicetypes --json | jq -r '[.devicetypes[] | select(.name | startswith("iPhone")) | .identifier] | last // empty')
-            if [ -z "$RUNTIME" ] || [ -z "$DEVTYPE" ]; then
-              echo '::error::Aucun runtime iOS utilisable sur ce runner.'
-              exit 1
+            DEVTYPE=$(xcrun simctl list devicetypes --json | jq -r '[.devicetypes[] | select(.name | test("iPhone.*Pro Max")) | .identifier] | last // empty')
+            if [ -n "$RUNTIME" ] && [ -n "$DEVTYPE" ]; then
+              UDID=$(xcrun simctl create ci-promax "$DEVTYPE" "$RUNTIME")
             fi
-            UDID=$(xcrun simctl create ci-iphone "$DEVTYPE" "$RUNTIME")
+          fi
+          if [ -z "$UDID" ]; then
+            UDID=$(xcrun simctl list devices available --json | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.isAvailable and (.name | startswith("iPhone"))) | .udid] | first // empty')
+          fi
+          if [ -z "$UDID" ]; then
+            echo '::error::Aucun simulateur iPhone utilisable sur ce runner.'
+            exit 1
           fi
           echo "Simulateur retenu : $UDID"
+          xcrun simctl list devices | grep "$UDID" || true
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
 
       - name: Rejouer une manche et capturer
