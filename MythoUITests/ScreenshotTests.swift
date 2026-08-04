@@ -23,10 +23,12 @@ final class ScreenshotTests: XCTestCase {
         // L'app ouvre désormais sur le catalogue de jeux : il faut le traverser
         // avant d'atteindre les réglages d'Undercover.
         capture("hub")
-        tap(
-            app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Undercover")).firstMatch,
-            timeout: 5
-        )
+        // Recherche par identifiant sur TOUS les types de descendants : la
+        // tuile n'est pas exposée comme un bouton, `accessibilityElement`
+        // ayant reconstruit l'élément.
+        let undercoverTile = app.descendants(matching: .any)["game-undercover"]
+        XCTAssertTrue(undercoverTile.waitForExistence(timeout: 8), "Tuile Undercover introuvable sur le hub")
+        undercoverTile.tap()
 
         capture("accueil")
 

@@ -99,6 +99,10 @@ private struct GameTile: View {
         .padding(.bottom, Theme.drop)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(voiceOverLabel)
+        // Ancre stable pour le parcours de captures : `children: .ignore` fait
+        // perdre à la tuile son type « bouton », donc la chercher par libellé
+        // échoue (run 30945419908).
+        .accessibilityIdentifier("game-\(game.id)")
     }
 
     // MARK: Morceaux
