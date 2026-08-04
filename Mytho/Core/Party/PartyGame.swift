@@ -1,5 +1,26 @@
 import SwiftUI
 
+/// Le contrat qu'un jeu de la soirée remplit pour exister dans l'app (spec §2.1).
+/// Ajouter un jeu revient à ajouter une entrée dans `GameRegistry.all` : aucun
+/// écran n'interroge un identifiant, donc aucun écran n'est à rouvrir.
+protocol PartyGame: Identifiable {
+    /// Stable et jamais renommé : il sert de clé de navigation et de mémoire de
+    /// paquet. « most-likely », « wavelength »…
+    var id: String { get }
+    var title: String { get }
+    /// Une ligne, pas deux : la tuile n'a pas la place d'expliquer les règles.
+    var tagline: String { get }
+    /// SF Symbol.
+    var symbol: String { get }
+    /// Toujours pris dans `Theme` : aucune couleur n'est créée pour un jeu.
+    var accent: Color { get }
+    var players: ClosedRange<Int> { get }
+    /// Durée typique d'une partie, en minutes.
+    var minutes: Int { get }
+    /// Impose la saisie du roster avant de lancer.
+    var needsNames: Bool { get }
+}
+
 /// Ce qu'une tuile de l'accueil dessine en grand. Porté par la donnée plutôt
 /// que par un test sur l'identifiant : ajouter un jeu ne doit obliger à toucher
 /// aucun écran existant (spec §2.1).
@@ -11,17 +32,21 @@ enum GameArtwork: Hashable {
 }
 
 /// Une entrée du catalogue : strictement ce qu'il faut pour dessiner une tuile.
-struct GameEntry: Identifiable, Hashable {
+///
+/// Le catalogue reste un tableau de valeurs concrètes et non de `any PartyGame` :
+/// un existentiel ne conforme pas `Identifiable` (exigence `Self`), donc
+/// `ForEach(GameRegistry.all)` ne compilerait plus. Le protocole reste le contrat
+/// de référence, `GameEntry` en est la seule implémentation nécessaire tant que
+/// les jeux n'ont pas de comportement propre à porter.
+struct GameEntry: PartyGame, Hashable {
     let id: String
     let title: String
-    /// Une ligne, pas deux : la tuile n'a pas la place d'expliquer les règles.
     let tagline: String
     let symbol: String
-    /// Toujours pris dans `Theme` : aucune couleur n'est créée pour un jeu.
     let accent: Color
     let players: ClosedRange<Int>
-    /// Durée typique d'une partie, en minutes.
     let minutes: Int
+    let needsNames: Bool
     /// Faux tant que le jeu n'est pas jouable : la tuile s'affiche quand même,
     /// c'est ce qui donne à la soirée l'envie de revenir.
     let isAvailable: Bool
@@ -44,6 +69,9 @@ enum GameRegistry {
             accent: Theme.brand,
             players: Composition.minPlayers...Composition.maxPlayers,
             minutes: 15,
+            // Undercover saisit ses propres noms dans ses réglages : lui imposer
+            // le roster ferait saisir la table deux fois.
+            needsNames: false,
             isAvailable: true,
             artwork: .reptileEye
         ),
@@ -55,6 +83,7 @@ enum GameRegistry {
             accent: Theme.amber,
             players: 3...12,
             minutes: 10,
+            needsNames: true,
             isAvailable: false
         ),
         GameEntry(
@@ -65,6 +94,9 @@ enum GameRegistry {
             accent: Theme.sky,
             players: 2...12,
             minutes: 10,
+            // Le mode débat, celui par défaut, se lance sans prénoms (§4.5) :
+            // c'est le mode survie qui les réclame, au moment où on le choisit.
+            needsNames: false,
             isAvailable: false
         ),
         GameEntry(
@@ -75,6 +107,7 @@ enum GameRegistry {
             accent: Theme.mint,
             players: 3...12,
             minutes: 15,
+            needsNames: true,
             isAvailable: false
         ),
         GameEntry(
@@ -85,6 +118,7 @@ enum GameRegistry {
             accent: Theme.brandLight,
             players: 2...12,
             minutes: 15,
+            needsNames: true,
             isAvailable: false
         ),
         GameEntry(
@@ -95,6 +129,7 @@ enum GameRegistry {
             accent: Theme.crimson,
             players: 3...12,
             minutes: 20,
+            needsNames: true,
             isAvailable: false
         )
     ]
