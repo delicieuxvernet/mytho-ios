@@ -105,6 +105,10 @@ struct GameEngine: Sendable {
     mutating func pickCard(at cardIndex: Int) -> Role? {
         guard case .dealing(let playerIndex) = phase,
               players.indices.contains(playerIndex),
+              // Un joueur ne pioche qu'une fois : sans ce garde, un retour en
+              // arrière lui laissait reprendre une carte, et le dernier joueur
+              // trouvait un paquet vide — distribution impossible à terminer.
+              players[playerIndex].role == nil,
               deck.indices.contains(cardIndex),
               let role = deck[cardIndex]
         else { return nil }
@@ -133,7 +137,7 @@ struct GameEngine: Sendable {
     private mutating func startRound(_ round: Int, using generator: inout some RandomNumberGenerator) {
         roundNumber = round
         speakingOrder = makeSpeakingOrder(using: &generator)
-        // Mr. Meme désigne un mime différent à chaque tour. Mr. White en est
+        // La variante du mime désigne un joueur différent à chaque tour. Mr. White en est
         // exclu : mimer un mot qu'on n'a pas le trahirait immédiatement.
         mimePlayerID = config.tableRules.contains(.mime)
             ? players.filter { $0.isAlive && $0.role != .mrWhite }.randomElement(using: &generator)?.id

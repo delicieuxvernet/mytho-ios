@@ -40,7 +40,7 @@ LES RÔLES
   devinant le mot des civils.
 
 LES POUVOIRS
-Déesse de la justice, Amoureux, Vengeuse, Duelistes, Mr. Meme, Fantôme :
+L'Arbitre, Amoureux, Vengeuse, Duellistes, Le Mime, Fantôme :
 six pouvoirs et variantes pour pimenter vos manches.
 
 • 375 paires de mots en 8 thèmes, en français

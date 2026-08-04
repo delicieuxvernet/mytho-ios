@@ -310,7 +310,7 @@ struct VoteView: View {
 
             if engine.config.specialRoles.contains(.justice) {
                 Label(
-                    "Égalité des votes ? La Déesse de la justice se révèle et tranche.",
+                    "Égalité des votes ? L'Arbitre se révèle et tranche.",
                     systemImage: SpecialRole.justice.symbol
                 )
                 .font(Theme.caption(13))

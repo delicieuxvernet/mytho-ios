@@ -11,12 +11,21 @@ struct DealView: View {
     let playerIndex: Int
 
     private enum Step { case handoff, picking, revealed }
-    @State private var step: Step = .handoff
-    @State private var revealedRole: Role?
-    @State private var pickedIndex: Int?
+
+    /// Seul état local : le joueur a pris le téléphone en main. Tout le reste
+    /// se déduit du moteur — un « Retour » restaure un moteur d'avant la pioche
+    /// et laissait sinon la vue bloquée sur une carte vide, sans issue.
+    @State private var introduced = false
     @Namespace private var cardNamespace
 
     private var player: Player { engine.players[playerIndex] }
+    private var revealedRole: Role? { player.role }
+    private var pickedIndex: Int? { player.pickedCardIndex }
+
+    private var step: Step {
+        if player.role != nil { return .revealed }
+        return introduced ? .picking : .handoff
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -88,7 +97,7 @@ struct DealView: View {
             }
 
             PrimaryButton(title: "Je suis \(player.name)", systemImage: "hand.raised.fill") {
-                withAnimation(Theme.spring) { step = .picking }
+                withAnimation(Theme.spring) { introduced = true }
             }
             .padding(.horizontal, Theme.gutter)
         }
@@ -136,11 +145,11 @@ struct DealView: View {
     }
 
     private func pick(_ index: Int) {
-        guard revealedRole == nil, let role = session.pickCard(at: index) else { return }
+        guard player.role == nil else { return }
         Haptics.impact(.rigid)
-        pickedIndex = index
-        revealedRole = role
-        withAnimation(Theme.flip) { step = .revealed }
+        // L'animation enveloppe la mutation du moteur : c'est elle qui fait
+        // basculer `step`, désormais dérivé.
+        withAnimation(Theme.flip) { session.pickCard(at: index) }
     }
 
     // MARK: Révélation

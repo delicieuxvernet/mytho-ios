@@ -18,10 +18,10 @@ enum SpecialRole: String, Codable, Hashable, Sendable, CaseIterable, Identifiabl
 
     var displayName: String {
         switch self {
-        case .justice: return "Déesse de la justice"
+        case .justice: return "L'Arbitre"
         case .lovers: return "Amoureux"
         case .avenger: return "Vengeuse"
-        case .duelists: return "Duelistes"
+        case .duelists: return "Duellistes"
         }
     }
 
@@ -86,7 +86,7 @@ enum TableRule: String, Codable, Hashable, Sendable, CaseIterable, Identifiable 
 
     var displayName: String {
         switch self {
-        case .mime: return "Mr. Meme"
+        case .mime: return "Le Mime"
         case .ghosts: return "Fantôme"
         }
     }
