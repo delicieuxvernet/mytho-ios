@@ -398,16 +398,38 @@ final class MostLikelyTests: XCTestCase {
     /// moteur reproductible.
     func testTheSameSeedDealsTheSameCards() throws {
         let players = table(4)
-        var left = try XCTUnwrap(makeEngine(players, options: options(limit: .endless), seed: 7))
-        var right = try XCTUnwrap(makeEngine(players, options: options(limit: .endless), seed: 7))
+        // Les generateurs vivent dans le test, pas dans le constructeur : la
+        // surcharge de confort `nextRound()` tire du hasard systeme, elle ne
+        // peut pas prolonger une suite reproductible.
+        var leftRNG = SeededGenerator(seed: 7)
+        var rightRNG = SeededGenerator(seed: 7)
+
+        // XCTUnwrap prend une autoclosure : `&generator` ne peut pas y entrer,
+        // d'ou la construction en deux temps.
+        let leftBuilt = MostLikelyEngine(
+            players: players,
+            options: options(limit: .endless),
+            scores: nil,
+            store: MemoryOnlyDeckStore(),
+            using: &leftRNG
+        )
+        let rightBuilt = MostLikelyEngine(
+            players: players,
+            options: options(limit: .endless),
+            scores: nil,
+            store: MemoryOnlyDeckStore(),
+            using: &rightRNG
+        )
+        var left = try XCTUnwrap(leftBuilt)
+        var right = try XCTUnwrap(rightBuilt)
 
         for _ in 0..<10 {
             XCTAssertEqual(left.card.id, right.card.id)
             XCTAssertEqual(left.tilt, right.tilt)
             playQuickRound(&left, designating: players[0].id)
             playQuickRound(&right, designating: players[0].id)
-            left.nextRound()
-            right.nextRound()
+            left.nextRound(using: &leftRNG)
+            right.nextRound(using: &rightRNG)
         }
     }
 
