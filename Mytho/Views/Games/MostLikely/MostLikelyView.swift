@@ -23,6 +23,10 @@ struct MostLikelyView: View {
     var onExit: () -> Void = {}
 
     @State private var engine: MostLikelyEngine?
+    /// Le moteur tel qu'il était juste avant qu'on relève la désignation. C'est
+    /// lui que « Retour » restitue depuis la grille : le moteur est une valeur,
+    /// la copie ne peut donc pas diverger de l'original entre-temps.
+    @State private var cardSnapshot: MostLikelyEngine?
     @State private var options = MostLikelyEngine.Options()
     /// Désignations en cours de saisie : une, ou deux si « Ex æquo » est ouvert.
     @State private var picks: [UUID] = []
@@ -40,6 +44,10 @@ struct MostLikelyView: View {
             Backdrop(skin: skin, accent: Theme.amber)
 
             content
+                // Posée ici et non dans chaque écran : c'est ce qui garantit
+                // qu'aucun écran ne peut naître sans sortie, et que la sortie ne
+                // se déplace jamais d'un moment du jeu à l'autre.
+                .partyTopBar(back: backStep, exit: { leave() }, confirmsExit: isRoundEngaged)
                 .animation(screenAnimation, value: phaseKey)
         }
         .environment(\.skin, skin)
@@ -90,7 +98,6 @@ struct MostLikelyView: View {
                 .padding(.top, 6)
             }
         }
-        .safeAreaInset(edge: .top, spacing: 0) { topBar(quitTitle: "Jeux") }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 6) {
                 if !hasEnoughPlayers {
@@ -242,7 +249,6 @@ struct MostLikelyView: View {
         }
         .padding(.horizontal, Theme.gutter)
         .padding(.bottom, 6)
-        .safeAreaInset(edge: .top, spacing: 0) { topBar(quitTitle: "Quitter") }
         .accessibilityIdentifier("most-likely-card")
         // `id:` plutôt qu'un simple `.task` : sans lui, une manche qui réutilise
         // la même vue ne relancerait jamais son décompte.
@@ -320,7 +326,6 @@ struct MostLikelyView: View {
         }
         .padding(.horizontal, Theme.gutter)
         .padding(.bottom, 6)
-        .safeAreaInset(edge: .top, spacing: 0) { topBar(quitTitle: "Quitter") }
         .accessibilityIdentifier("most-likely-grid")
     }
 
@@ -404,7 +409,6 @@ struct MostLikelyView: View {
         }
         .padding(.horizontal, Theme.gutter)
         .padding(.bottom, 6)
-        .safeAreaInset(edge: .top, spacing: 0) { topBar(quitTitle: "Quitter") }
         .accessibilityIdentifier("most-likely-result")
         .task(id: engine.roundNumber) { await revealResult() }
     }
@@ -692,36 +696,6 @@ struct MostLikelyView: View {
 
     // MARK: - Morceaux communs
 
-    private func topBar(quitTitle: String) -> some View {
-        HStack(spacing: 8) {
-            Button {
-                haptics { Haptics.tap() }
-                leave()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 12, weight: .bold))
-                        .accessibilityHidden(true)
-                    Text(quitTitle)
-                        .font(Theme.caption(13))
-                }
-                .foregroundStyle(skin.ink)
-                .padding(.horizontal, 13)
-                .frame(height: Theme.touchTarget)
-                .background(
-                    Capsule()
-                        .fill(skin.panel)
-                        .overlay(Capsule().strokeBorder(skin.outline, lineWidth: 2))
-                )
-            }
-            .buttonStyle(PressedStyle())
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 8)
-        .padding(.bottom, 4)
-    }
-
     private func reminder(_ engine: MostLikelyEngine) -> some View {
         Text("Le plus susceptible de \(engine.card.text)")
             .font(Theme.body(15))
@@ -814,6 +788,36 @@ struct MostLikelyView: View {
         onExit()
     }
 
+    // MARK: - Sorties
+
+    /// Le pas en arrière de l'écran courant. Nul partout où il n'y a rien
+    /// derrière, et surtout sur les écrans secrets : rejouer un bulletin
+    /// laisserait tricher (spec §2.3).
+    private var backStep: (() -> Void)? {
+        guard let engine else { return nil }
+        switch engine.phase {
+        case .designation:
+            // Rien n'est encore validé : on rend la carte, la manche est
+            // intacte. C'est le seul retour sans conséquence du jeu.
+            guard cardSnapshot != nil else { return nil }
+            return {
+                picks = []
+                allowsTie = false
+                withAnimation(screenAnimation) { self.engine = cardSnapshot }
+            }
+        case .card, .pass, .ballot, .result, .finished:
+            return nil
+        }
+    }
+
+    /// Une manche engagée ne s'abandonne pas sur un appui réflexe : le téléphone
+    /// circule et « Jeux » est à portée de pouce.
+    private var isRoundEngaged: Bool {
+        guard let engine else { return false }
+        if case .finished = engine.phase { return false }
+        return true
+    }
+
     private func pick(_ id: UUID) {
         haptics { Haptics.tap() }
 
@@ -874,6 +878,9 @@ struct MostLikelyView: View {
     /// « Passer le décompte », et par « Faire circuler » en vote secret.
     private func finishCardPhase() {
         countdownIndex = -1
+        // Photographié avant de relever la désignation : c'est ce moteur-là que
+        // « Retour » restitue depuis la grille.
+        cardSnapshot = engine
         engine?.countdownFinished()
     }
 

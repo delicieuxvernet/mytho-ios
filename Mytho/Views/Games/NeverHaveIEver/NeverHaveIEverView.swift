@@ -11,10 +11,13 @@ struct NeverHaveIEverView: View {
     @ObservedObject var roster: RosterStore
     @ObservedObject var settings: AppSettings
 
-    /// Sortie vers l'accueil. Optionnelle : la navigation de la soirée
-    /// (`Route`) n'est pas encore câblée, et un bouton « Changer de jeu » qui
-    /// ne mène nulle part vaut moins que pas de bouton du tout.
-    var onQuit: (() -> Void)? = nil
+    /// Sortie vers le catalogue des jeux.
+    ///
+    /// Exigée, et non plus optionnelle : la barre de sortie l'offre depuis
+    /// **toutes** les phases, et une pastille « Jeux » qui ne mène nulle part
+    /// enfermerait la soirée dans le jeu. La navigation de la soirée
+    /// (`PartyGameFlow`) la fournit désormais partout où l'écran est présenté.
+    var onQuit: () -> Void
 
     /// Injectable pour que les prévisualisations et les captures d'écran
     /// n'écrivent pas dans la mémoire de paquet du simulateur.
@@ -32,6 +35,11 @@ struct NeverHaveIEverView: View {
             Backdrop(skin: skin, accent: Theme.mint)
             stage
         }
+        // Posée une seule fois à la racine plutôt que sur chacun des huit
+        // écrans : aucune phase ne peut alors oublier sa sortie, et la barre ne
+        // bouge pas d'un pixel d'un écran à l'autre. Placée **avant**
+        // `environment` pour hériter de la peau du moment — nuit comprise.
+        .partyTopBar(back: backStep, exit: { quitToGames() }, confirmsExit: isRoundEngaged)
         .environment(\.skin, skin)
         .preferredColorScheme(skin.colorScheme)
         // Un seul point d'animation pour tous les enchaînements d'écran : les
@@ -79,6 +87,49 @@ struct NeverHaveIEverView: View {
         guard let last = all.last else { return "" }
         guard all.count > 1 else { return last }
         return all.dropLast().joined(separator: ", ") + " et " + last
+    }
+
+    // MARK: - Sorties
+
+    /// Le pas en arrière, quand il en existe un — nul le reste du temps : une
+    /// pastille inerte apprend à la table à ne plus s'y fier.
+    ///
+    /// Ce jeu n'en offre qu'un, et il est court : la première carte, tant
+    /// qu'aucune vie n'est tombée, rend la main aux réglages — c'est là qu'on
+    /// s'aperçoit d'avoir lancé en aveu secret sans le vouloir. Ensuite, plus
+    /// rien : revenir sur une désignation rendrait des vies déjà retirées, et
+    /// revenir sur un aveu secret remontrerait au joueur suivant ce que le
+    /// précédent vient de lire (§2.3). Le tour raté se rattrape par « Annuler
+    /// ce tour », qui dit, lui, ce qu'il restitue.
+    private var backStep: (() -> Void)? {
+        guard let game = engine, game.phase == .card, game.cardNumber <= 1 else { return nil }
+        return { returnToSetup() }
+    }
+
+    /// Vrai dès qu'une manche est engagée : le téléphone tourne autour de la
+    /// table et « Jeux » est à portée de pouce, un appui réflexe emporterait les
+    /// vies et les aveux de tout le monde. Aux réglages rien n'a commencé, au
+    /// classement tout est déjà joué : y demander confirmation ne protégerait
+    /// rien et ferait douter du bouton.
+    private var isRoundEngaged: Bool {
+        guard let phase = engine?.phase else { return false }
+        return phase != .finished
+    }
+
+    /// Retour au catalogue. Referme la fenêtre de manche avant de rendre la
+    /// main : hors manche, retirer un joueur le supprime pour de bon au lieu de
+    /// le laisser barré dans le jeu suivant (§2.2).
+    private func quitToGames() {
+        roster.endRound()
+        onQuit()
+    }
+
+    /// Retour aux réglages depuis la première carte. Même fermeture de fenêtre :
+    /// le lancement l'avait ouverte, et l'écran de réglages attend le roster
+    /// dans son état hors partie.
+    private func returnToSetup() {
+        roster.endRound()
+        engine = nil
     }
 
     // MARK: - Aiguillage
@@ -322,7 +373,7 @@ struct NeverHaveIEverView: View {
 
     private func cardScreen(_ game: NeverHaveIEverEngine) -> some View {
         VStack(spacing: 16) {
-            topBar(game, title: "La carte")
+            phaseBar(game, title: "La carte")
 
             Spacer(minLength: 0)
 
@@ -372,12 +423,14 @@ struct NeverHaveIEverView: View {
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: - Bandeau supérieur
+    // MARK: - Bandeau de phase
 
-    private func topBar(_ game: NeverHaveIEverEngine, title: String) -> some View {
+    /// Où on en est : le nom de l'étape et le compteur de cartes. Purement
+    /// informatif depuis que la sortie a rejoint la barre commune — la croix
+    /// qui vivait ici faisait doublon avec la pastille « Jeux », et surtout
+    /// n'existait que dans ce jeu-ci.
+    private func phaseBar(_ game: NeverHaveIEverEngine, title: String) -> some View {
         HStack(spacing: 10) {
-            if let onQuit { quitButton(onQuit) }
-
             PhasePill(text: title, tint: Theme.mint, darkText: true)
 
             Spacer(minLength: 0)
@@ -388,27 +441,6 @@ struct NeverHaveIEverView: View {
                 .lineLimit(1)
         }
         .frame(minHeight: Theme.touchTarget)
-    }
-
-    private func quitButton(_ action: @escaping () -> Void) -> some View {
-        Button {
-            Haptics.tap()
-            roster.endRound()
-            action()
-        } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(skin.ink)
-                .frame(width: 34, height: 34)
-                .background(
-                    Circle()
-                        .fill(skin.panel)
-                        .overlay(Circle().strokeBorder(skin.outline, lineWidth: 2))
-                )
-                .frame(width: Theme.touchTarget, height: Theme.touchTarget)
-        }
-        .buttonStyle(PressedStyle())
-        .accessibilityLabel("Quitter la partie")
     }
 
     private func counterLabel(_ game: NeverHaveIEverEngine) -> String {
@@ -423,7 +455,7 @@ struct NeverHaveIEverView: View {
 
     private func tallyScreen(_ game: NeverHaveIEverEngine) -> some View {
         VStack(spacing: 12) {
-            topBar(game, title: "Qui l'a fait ?")
+            phaseBar(game, title: "Qui l'a fait ?")
             statementPanel(game, large: false)
 
             ScrollView {
@@ -593,7 +625,7 @@ struct NeverHaveIEverView: View {
     /// le groupe n'a pas demandé les prénoms (§5.2).
     private func countScreen(_ game: NeverHaveIEverEngine) -> some View {
         VStack(spacing: 14) {
-            topBar(game, title: "Aveu secret")
+            phaseBar(game, title: "Aveu secret")
 
             Spacer(minLength: 0)
 
@@ -646,7 +678,7 @@ struct NeverHaveIEverView: View {
 
     private func revealScreen(_ game: NeverHaveIEverEngine) -> some View {
         VStack(spacing: 12) {
-            topBar(game, title: "Révélation")
+            phaseBar(game, title: "Révélation")
             statementPanel(game, large: false)
 
             ScrollView {
@@ -682,7 +714,7 @@ struct NeverHaveIEverView: View {
 
     private func aftermathScreen(_ game: NeverHaveIEverEngine) -> some View {
         VStack(spacing: 12) {
-            topBar(game, title: "Conséquences")
+            phaseBar(game, title: "Conséquences")
 
             Panel {
                 Text(outcomeSentence(game))
@@ -788,11 +820,12 @@ struct NeverHaveIEverView: View {
                     startGame()
                 }
 
-                if let onQuit {
-                    GhostButton(title: "Changer de jeu", systemImage: "square.grid.2x2") {
-                        roster.endRound()
-                        onQuit()
-                    }
+                // Conservé sous « Rejouer » malgré la pastille « Jeux » de la
+                // barre (§2.7) : au classement, la question n'est plus « comment
+                // je sors d'ici » mais « on remet ça ou on change ? ». Les deux
+                // réponses doivent se présenter ensemble, à hauteur de pouce.
+                GhostButton(title: "Changer de jeu", systemImage: "square.grid.2x2") {
+                    quitToGames()
                 }
             }
             .padding(.horizontal, Theme.gutter)
@@ -1294,6 +1327,7 @@ private final class PreviewDeckMemory: DeckMemoryStore {
     NeverHaveIEverView(
         roster: previewRoster(["Léa", "Tom", "Nino", "Sarah", "Inès"]),
         settings: previewSettings(),
+        onQuit: {},
         deckStore: PreviewDeckMemory()
     )
 }

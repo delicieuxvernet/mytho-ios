@@ -77,6 +77,11 @@ struct WouldYouRatherView: View {
             case .results: resultsScreen.transition(revealTransition)
             }
         }
+        // Posée sur le conteneur et non sur chaque écran : la barre ne rejoue
+        // pas la transition à chaque étape, elle reste exactement là où le pouce
+        // l'a laissée. Avant `.environment` dans la chaîne, sans quoi elle ne
+        // verrait pas la peau de l'écran en cours et resterait en encre de nuit.
+        .partyTopBar(back: backStep, exit: leaveGame, confirmsExit: exitNeedsConfirmation)
         .environment(\.skin, skin)
         .preferredColorScheme(skin.colorScheme)
         // Quelqu'un part toujours en avance : il sort des votants sans être
@@ -126,6 +131,61 @@ struct WouldYouRatherView: View {
         roster.participant(id: id)?.name ?? "Joueur"
     }
 
+    // MARK: - Sorties
+
+    /// Le pas en arrière de l'écran en cours. Nul là où il n'y a rien derrière,
+    /// ou rien qui puisse se rejouer : une pastille inerte apprend à la table à
+    /// ne plus se fier à la barre, et c'est toute la barre qu'on perd alors.
+    private var backStep: (() -> Void)? {
+        switch step {
+        // Le premier écran du jeu ; l'écran de passage, qu'une révélation
+        // interdit de rejouer (spec §2.3) ; l'écran de fin, où « Rejouer » et
+        // « Changer de jeu » sont déjà les deux seules suites possibles.
+        case .setup, .pass, .results:
+            return nil
+
+        case .roster:
+            return { withAnimation(motion) { step = .setup } }
+
+        case .dilemma:
+            // Celui qui tient l'appareil n'a pas encore voté : lui rendre son
+            // écran de passage ne touche pas à la manche. En débat, personne ne
+            // se passe rien et le dilemme ouvre la carte — rien derrière lui.
+            // Le vote part dès le tap, avant la temporisation de passage de
+            // main : sans ces deux gardes, on pouvait revenir en arrière une
+            // demi-seconde après avoir voté et bloquer le tour.
+            guard let voter,
+                  engine?.mode.identifiesVoters == true,
+                  engine?.votes[voter] == nil,
+                  advanceToken == nil
+            else { return nil }
+            return { withAnimation(motion) { step = .pass(voter) } }
+
+        case .split:
+            // Rien : le comptage à main levée se reprend par « Corriger le
+            // comptage », un bouton qui dit ce qu'il défait. Deux commandes pour
+            // le même effet, dont une muette, apprend à la table à se méfier de
+            // la barre — et c'est toute la barre qu'on perd alors.
+            return nil
+
+        case .survivors:
+            // La répartition reste en mémoire tant que la carte n'a pas tourné :
+            // y revenir ne coûte rien et ne rejoue aucune élimination.
+            return { withAnimation(motion) { step = .split } }
+        }
+    }
+
+    /// Une manche engagée ne s'abandonne pas sur un appui réflexe : le téléphone
+    /// tourne autour de la table et « Jeux » est à portée de pouce. Aux réglages,
+    /// aux prénoms et au résultat il n'y a rien à perdre — demander confirmation
+    /// pour rien ferait douter du bouton partout ailleurs.
+    private var exitNeedsConfirmation: Bool {
+        switch step {
+        case .setup, .roster, .results: return false
+        case .pass, .dilemma, .split, .survivors: return true
+        }
+    }
+
     // MARK: - Réglages
 
     private var setupScreen: some View {
@@ -145,24 +205,22 @@ struct WouldYouRatherView: View {
         .safeAreaInset(edge: .bottom) { setupBar }
     }
 
+    /// Plus de croix ici : elle n'existait que dans ce jeu et à cet écran-là,
+    /// c'est-à-dire nulle part au moment où on en a besoin. La sortie est
+    /// désormais dans la barre partagée, au même endroit que dans les autres.
     private var setupHeader: some View {
-        HStack(alignment: .top, spacing: 10) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Tu préfères ?")
-                    .font(Theme.title(32))
-                    .foregroundStyle(skin.ink)
-                    .accessibilityAddTraits(.isHeader)
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Tu préfères ?")
+                .font(Theme.title(32))
+                .foregroundStyle(skin.ink)
+                .accessibilityAddTraits(.isHeader)
 
-                Text("Deux options, aucune bonne réponse.")
-                    .font(Theme.caption(13))
-                    .foregroundStyle(skin.ink.opacity(0.75))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-
-            iconButton("xmark", label: "Revenir aux jeux", action: leaveGame)
+            Text("Deux options, aucune bonne réponse.")
+                .font(Theme.caption(13))
+                .foregroundStyle(skin.ink.opacity(0.75))
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var modePicker: some View {
@@ -335,6 +393,10 @@ struct WouldYouRatherView: View {
 
     // MARK: - Prénoms
 
+    /// Le bouton de `RosterView` reste grisé tant qu'il manque des prénoms :
+    /// arriver ici par curiosité enfermait la soirée sur « Qui joue ? ». C'est
+    /// le « Retour » de la barre partagée qui l'en sort — la barre ad hoc posée
+    /// ici faisait le même travail, mais d'une autre forme et sur ce seul écran.
     private var rosterScreen: some View {
         RosterView(
             store: roster,
@@ -342,19 +404,6 @@ struct WouldYouRatherView: View {
             startTitle: "Enregistrer"
         ) {
             withAnimation(motion) { step = .setup }
-        }
-        // Le bouton de RosterView reste grisé tant qu'il manque des prénoms :
-        // sans cette barre, arriver ici par curiosité enfermait la soirée sur
-        // « Qui joue ? », sans retour ni geste de bord.
-        .safeAreaInset(edge: .top, spacing: 0) {
-            HStack(spacing: 8) {
-                iconButton("chevron.left", label: "Revenir aux réglages") {
-                    withAnimation(motion) { step = .setup }
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 8)
-            .padding(.bottom, 4)
         }
     }
 
@@ -1060,25 +1109,6 @@ struct WouldYouRatherView: View {
                 Rectangle().fill(skin.outline).frame(height: 2)
             }
             .ignoresSafeArea()
-    }
-
-    private func iconButton(_ systemName: String, label: String, action: @escaping () -> Void) -> some View {
-        Button {
-            Haptics.tap()
-            action()
-        } label: {
-            Image(systemName: systemName)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(skin.ink)
-                .frame(width: Theme.touchTarget, height: Theme.touchTarget)
-                .background(
-                    Circle()
-                        .fill(skin.panel)
-                        .overlay(Circle().strokeBorder(skin.outline, lineWidth: 2))
-                )
-        }
-        .buttonStyle(PressedStyle())
-        .accessibilityLabel(label)
     }
 
     private func progressLabel(_ current: WouldYouRatherEngine, index: Int) -> String {
