@@ -25,6 +25,12 @@ struct RootView: View {
     /// Nul tant qu'aucun jeu n'est choisi : l'app s'ouvre sur le catalogue.
     @State private var selectedGameID: String?
 
+    /// Les prénoms et les réglages de la soirée vivent au-dessus des jeux : ils
+    /// se saisissent une fois et les jeux les reprennent (§2.2). Undercover n'y
+    /// touche pas — il garde sa propre composition dans `SetupView`.
+    @StateObject private var roster = RosterStore()
+    @StateObject private var settings = AppSettings()
+
     var body: some View {
         ZStack {
             Backdrop(skin: currentSkin, accent: Theme.accent(for: session.engine?.phase))
@@ -35,6 +41,16 @@ struct RootView: View {
                 } else if selectedGameID == GameRegistry.undercoverID {
                     SetupView()
                         .transition(.forward)
+                } else if let partyGame = partyGame {
+                    // Les jeux de la soirée ont leur propre empilement : prénoms,
+                    // écran du jeu, retour au catalogue.
+                    PartyGameFlow(
+                        game: partyGame,
+                        roster: roster,
+                        settings: settings,
+                        onExit: { selectedGameID = nil }
+                    )
+                    .transition(.forward)
                 } else {
                     // Repli sur le catalogue, jamais sur Undercover : le jour où
                     // un autre jeu devient jouable, le choisir ne doit pas
@@ -84,6 +100,15 @@ struct RootView: View {
         .persistentSystemOverlays(session.engine != nil ? .hidden : .automatic)
     }
 
+
+    /// Le jeu de soirée choisi, quand c'en est un et qu'il est réellement
+    /// jouable. Undercover en est exclu : il garde son aiguillage par phase de
+    /// moteur. Un identifiant inconnu ou pas encore disponible rend `nil`, donc
+    /// le catalogue — jamais un écran vide dont la soirée ne sortirait pas.
+    private var partyGame: GameEntry? {
+        guard let id = selectedGameID, id != GameRegistry.undercoverID else { return nil }
+        return GameRegistry.all.first { $0.id == id && $0.isAvailable }
+    }
 
     /// Le jour on discute (papier), la nuit on révèle (encre) : la peau suit
     /// la phase. Validé par Arthur le 4 août 2026 (reco mixte).
@@ -215,7 +240,10 @@ struct RootView: View {
     /// Identifiant textuel de l'écran courant : sert de déclencheur d'animation.
     private var transitionKey: String {
         guard let phase = session.engine?.phase else {
-            return selectedGameID == GameRegistry.undercoverID ? "setup" : "hub"
+            // Une clé par jeu de soirée, sinon le passage du catalogue à son flux
+            // garde la même valeur et l'animation d'entrée ne joue jamais.
+            guard let id = selectedGameID else { return "hub" }
+            return id == GameRegistry.undercoverID ? "setup" : "game-\(id)"
         }
         switch phase {
         case .dealing(let index): return "deal-\(index)"

@@ -56,9 +56,14 @@ struct GameEntry: PartyGame, Hashable {
 /// Catalogue des jeux de l'app. Un jeu de plus = une ligne de plus ici.
 enum GameRegistry {
 
-    /// Le seul jeu jouable à ce jour. Nommé plutôt que recopié en dur, pour que
-    /// l'aiguillage refuse d'ouvrir Undercover quand un autre jeu est choisi.
+    /// Les identifiants sont nommés plutôt que recopiés en dur : l'aiguillage
+    /// (`PartyGameFlow`) et `RootView` s'appuient dessus, et une coquille dans
+    /// une chaîne ouvrirait silencieusement le mauvais écran au lieu de casser
+    /// à la compilation.
     static let undercoverID = "undercover"
+    static let mostLikelyID = "most-likely"
+    static let wouldYouRatherID = "would-you-rather"
+    static let neverHaveIEverID = "never-have-i-ever"
 
     static let all: [GameEntry] = [
         GameEntry(
@@ -76,39 +81,49 @@ enum GameRegistry {
             artwork: .reptileEye
         ),
         GameEntry(
-            id: "most-likely",
+            id: mostLikelyID,
             title: "Le plus susceptible de…",
             tagline: "Au décompte, tout le monde pointe du doigt.",
             symbol: "hand.point.up.left.fill",
             accent: Theme.amber,
+            // Plancher du moteur (`MostLikelyEngine.minimumPlayers`) : en dessous,
+            // pointer du doigt ne départage plus personne.
             players: 3...12,
             minutes: 10,
+            // Ses réglages savent dire qu'il manque des prénoms, pas les saisir :
+            // le flux ouvre « Qui joue ? » avant de lui rendre la main.
             needsNames: true,
-            isAvailable: false
+            isAvailable: true
         ),
         GameEntry(
-            id: "would-you-rather",
+            id: wouldYouRatherID,
             title: "Tu préfères ?",
             tagline: "Deux options, aucune bonne réponse.",
             symbol: "arrow.triangle.branch",
-            accent: Theme.sky,
+            // Le violet du côté A (§4) : la tuile doit annoncer la couleur de
+            // l'écran qu'elle ouvre. L'ambre est celle du côté B, elle n'a pas
+            // sa place sur une vignette qui ne montre qu'un aplat.
+            accent: Theme.brand,
             players: 2...12,
             minutes: 10,
             // Le mode débat, celui par défaut, se lance sans prénoms (§4.5) :
             // c'est le mode survie qui les réclame, au moment où on le choisit.
+            // L'écran de réglages porte d'ailleurs sa propre entrée « Modifier
+            // les prénoms », donc le flux n'a pas à la précéder.
             needsNames: false,
-            isAvailable: false
+            isAvailable: true
         ),
         GameEntry(
-            id: "never-have-i-ever",
+            id: neverHaveIEverID,
             title: "Je n'ai jamais",
             tagline: "Cinq vies chacun, le dernier debout gagne.",
             symbol: "hand.raised.fill",
             accent: Theme.mint,
+            // Plancher du moteur (`NeverHaveIEverEngine.minPlayers`).
             players: 3...12,
             minutes: 15,
             needsNames: true,
-            isAvailable: false
+            isAvailable: true
         ),
         GameEntry(
             id: "wavelength",
