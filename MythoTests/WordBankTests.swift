@@ -5,12 +5,15 @@ import XCTest
 /// (doublon, mot vide, paire identique) avant qu'elles n'arrivent en partie.
 final class WordBankTests: XCTestCase {
 
+    /// Depuis l'écrémage du 17 août, la banque assume d'être petite : peu de
+    /// paires, que des essentielles. Le tirage par défaut pioche dans toutes
+    /// les catégories à la fois, la variété vient du total, pas de chacune.
     func testEveryCategoryHasEnoughPairs() {
         XCTAssertFalse(WordBank.categories.isEmpty)
         for category in WordBank.categories {
             XCTAssertGreaterThanOrEqual(
-                category.pairs.count, 40,
-                "\(category.name) : trop peu de paires, les mots reviendraient trop souvent"
+                category.pairs.count, 5,
+                "\(category.name) : catégorie squelettique, autant la fusionner"
             )
         }
     }

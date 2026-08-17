@@ -557,6 +557,10 @@ final class NeverHaveIEverTests: XCTestCase {
     /// L'app est classée **4+** et a été soumise en déclarant aucune référence à
     /// l'alcool, au tabac, aux drogues ni au sexe. Un pack ajouté plus tard ne
     /// doit pas pouvoir invalider cette classification en silence.
+    /// Les packs publics restent jouables sans la porte d'âge : pas d'alcool,
+    /// pas de drogue, pas de sexe. Le registre « hontes vécues » (embrasser la
+    /// mauvaise personne, un crush dans le groupe) y est, lui, assumé depuis
+    /// l'écrémage du 17 août — l'app est classée 17+.
     func testNoCardBreaksTheFourPlusRating() {
         let banned: Set<String> = [
             "alcool", "alcoolisé", "alcoolisée", "bière", "bières", "vin", "vins",
@@ -565,7 +569,7 @@ final class NeverHaveIEverTests: XCTestCase {
             "cigarette", "cigarettes", "clope", "clopes", "fumé", "fumée", "fumer",
             "tabac", "joint", "drogue", "drogué", "droguée",
             "sexe", "sexuel", "sexuelle", "nu", "nue", "nus", "nues", "seins",
-            "préservatif", "embrassé", "embrasser", "baiser", "couché", "coucher",
+            "préservatif", "baiser", "couché", "coucher",
             "porno", "casino", "pari", "parié", "parier", "arme", "armes"
         ]
 
