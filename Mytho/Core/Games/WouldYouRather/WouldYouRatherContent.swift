@@ -297,4 +297,80 @@ enum WouldYouRatherBank {
         Dilemma(id: "wyr_199", a: "Retenir chaque visage croisé", b: "Retenir chaque conversation entendue"),
         Dilemma(id: "wyr_200", a: "Devenir très sage", b: "Devenir très drôle")
     ]
+
+    // MARK: Pack Extrême (18+)
+
+    /// 60 dilemmes 18+, hors du paquet de base : dégoût assumé, honte
+    /// sociale, intime cru, absurde corporel. Verrouillé derrière la
+    /// confirmation d'âge — et jamais graphique (règle 1.1.4).
+    static let extreme: [Dilemma] = [
+        Dilemma(id: "wyr_201", a: "Transpirer de l'huile de friture", b: "Sentir le fromage fondu en permanence"),
+        Dilemma(id: "wyr_202", a: "Lécher la rampe du métro", b: "Boire l'eau d'un vase d'une semaine"),
+        Dilemma(id: "wyr_203", a: "Manger un insecte croustillant par jour", b: "Un ver vivant par semaine"),
+        Dilemma(id: "wyr_204", a: "Marcher pieds nus dans des toilettes publiques", b: "Dormir dans des draps jamais lavés"),
+        Dilemma(id: "wyr_205", a: "Roter l'odeur de ton dernier repas", b: "Péter en fumée colorée"),
+        Dilemma(id: "wyr_206", a: "Des mains qui sentent le poisson", b: "Des cheveux qui sentent le tabac froid"),
+        Dilemma(id: "wyr_207", a: "Mâcher un chewing-gum trouvé", b: "Finir le verre d'un inconnu"),
+        Dilemma(id: "wyr_208", a: "Une douche par mois", b: "Un brossage de dents par semaine"),
+        Dilemma(id: "wyr_209", a: "Vomir devant ton crush", b: "Que ton crush vomisse sur toi"),
+        Dilemma(id: "wyr_210", a: "Garder le même caleçon un mois", b: "Les mêmes chaussettes trois mois"),
+        Dilemma(id: "wyr_211", a: "Ton historique affiché en soirée", b: "Tes vocaux en haut-parleur au travail"),
+        Dilemma(id: "wyr_212", a: "Arriver nu à un repas de famille", b: "En pyjama licorne à un entretien"),
+        Dilemma(id: "wyr_213", a: "Péter bruyamment à un enterrement", b: "Avoir un fou rire à ton propre mariage"),
+        Dilemma(id: "wyr_214", a: "Crier le prénom de ton ex à ton mariage", b: "Pleurer au mariage de ton ex"),
+        Dilemma(id: "wyr_215", a: "Tes recherches de la semaine rendues publiques", b: "Tes pensées audibles une journée"),
+        Dilemma(id: "wyr_216", a: "T'étaler sur scène devant mille personnes", b: "Bégayer ta demande en mariage"),
+        Dilemma(id: "wyr_217", a: "Envoyer un nude au groupe familial", b: "En recevoir un devant ta mère"),
+        Dilemma(id: "wyr_218", a: "Un suçon visible à un entretien", b: "Une braguette ouverte en conférence"),
+        Dilemma(id: "wyr_219", a: "Des débuts géniaux qui finissent mal", b: "Des histoires tièdes qui durent"),
+        Dilemma(id: "wyr_220", a: "Un an d'abstinence", b: "Un an sans téléphone"),
+        Dilemma(id: "wyr_221", a: "Lire les pensées de ton ou ta partenaire", b: "Qu'il ou elle lise les tiennes"),
+        Dilemma(id: "wyr_222", a: "Tes ex réunis pour te débriefer", b: "Ton journal intime lu à voix haute"),
+        Dilemma(id: "wyr_223", a: "Retenter avec ton ex et regretter", b: "Ne jamais savoir ce que ça aurait donné"),
+        Dilemma(id: "wyr_224", a: "Gémir au moindre étirement", b: "Rougir à chaque prénom de ton passé"),
+        Dilemma(id: "wyr_225", a: "Ta mère trouve ton tiroir secret", b: "Ton coloc raconte ta nuit à table"),
+        Dilemma(id: "wyr_226", a: "Revivre ta première fois en pire", b: "La vidéo de ta pire soirée en famille"),
+        Dilemma(id: "wyr_227", a: "Des doigts en saucisses cocktail", b: "Des genoux qui klaxonnent"),
+        Dilemma(id: "wyr_228", a: "Un bruit de klaxon en t'asseyant", b: "Un bruit de velcro en te levant"),
+        Dilemma(id: "wyr_229", a: "Un générique triste quand tu sors d'une pièce", b: "Des applaudissements quand tu vas aux toilettes"),
+        Dilemma(id: "wyr_230", a: "Transpirer des paillettes", b: "Pleurer de la sauce piquante"),
+        Dilemma(id: "wyr_231", a: "Un troisième bras dans le dos", b: "Un œil derrière la tête"),
+        Dilemma(id: "wyr_232", a: "Parler uniquement en rimes", b: "Chanter tout ce que tu dis"),
+        Dilemma(id: "wyr_233", a: "Sentir la frite en boîte de nuit", b: "Le chlore en rendez-vous galant"),
+        Dilemma(id: "wyr_234", a: "Hoqueter à chaque mensonge", b: "Éternuer à chaque pensée coquine"),
+        Dilemma(id: "wyr_235", a: "Connaître la date de ta mort", b: "La cause, sans la date"),
+        Dilemma(id: "wyr_236", a: "Revivre la même journée un an", b: "Sauter un an de ta vie"),
+        Dilemma(id: "wyr_237", a: "Être oublié après ta mort", b: "Célèbre pour une honte"),
+        Dilemma(id: "wyr_238", a: "Savoir tout ce qui se dit sur toi", b: "Ne jamais rien savoir"),
+        Dilemma(id: "wyr_239", a: "Oublier toutes tes soirées", b: "Que les autres se souviennent de tout"),
+        Dilemma(id: "wyr_240", a: "Riche mais détesté", b: "Adoré mais fauché"),
+        Dilemma(id: "wyr_241", a: "Une cuite mémorable sans souvenirs", b: "Tous les souvenirs d'une soirée honteuse"),
+        Dilemma(id: "wyr_242", a: "Une gueule de bois éternelle", b: "Un lundi éternel"),
+        Dilemma(id: "wyr_243", a: "Ne boire que des shots tièdes", b: "Que de la bière éventée"),
+        Dilemma(id: "wyr_244", a: "Danser sobre au milieu des gens bourrés", b: "Être le seul bourré au brunch de famille"),
+        Dilemma(id: "wyr_245", a: "Être recalé par le videur devant tout le monde", b: "Vomir dans la file du kebab"),
+        Dilemma(id: "wyr_246", a: "Perdre ton téléphone à chaque soirée", b: "Ta carte à chaque addition"),
+        Dilemma(id: "wyr_247", a: "Karaoké obligatoire à chaque soirée", b: "Discours obligatoire à chaque dîner"),
+        Dilemma(id: "wyr_248", a: "Un after qui ne finit jamais", b: "Des soirées finies à vingt-deux heures"),
+        Dilemma(id: "wyr_249", a: "Un rencard avec l'ex de ton meilleur pote", b: "Ton pote en couple avec ton ex"),
+        Dilemma(id: "wyr_250", a: "Un rencard parfait qui ne rappelle jamais", b: "Dix rencards moyens qui rappellent trop"),
+        Dilemma(id: "wyr_251", a: "Épouser ton premier crush", b: "La dernière personne que tu as ghostée"),
+        Dilemma(id: "wyr_252", a: "Tes parents choisissent tes rencards", b: "Tes potes gèrent tes messages"),
+        Dilemma(id: "wyr_253", a: "Ne dater que des sosies de ton ex", b: "Ne plus jamais avoir de type"),
+        Dilemma(id: "wyr_254", a: "Annoncer ton nombre exact à table", b: "Laisser la table deviner et voter"),
+        Dilemma(id: "wyr_255", a: "Un smoothie des restes du frigo", b: "Une soupe de fin de kebab"),
+        Dilemma(id: "wyr_256", a: "Entendre tes voisins tous les soirs", b: "Qu'ils t'entendent tous les soirs"),
+        Dilemma(id: "wyr_257", a: "Un cheveu dans chaque plat", b: "Un ongle dans un seul plat mystère"),
+        Dilemma(id: "wyr_258", a: "Serrer des mains moites à vie", b: "Faire la bise à des joues humides"),
+        Dilemma(id: "wyr_259", a: "Ton dentiste commente ta vie amoureuse", b: "Ton coiffeur commente tes finances"),
+        Dilemma(id: "wyr_260", a: "Un tatouage choisi par ta belle-mère", b: "Un tatouage choisi par ton pire ennemi")
+    ]
+
+    /// Le paquet effectivement joué : la base, plus l'Extrême si l'âge est
+    /// confirmé ET que la table l'a activé. Le verrou se vérifie ici, pas dans
+    /// la vue — un réglage sauvegardé ne rouvre pas un pack refermé.
+    static func dilemmas(adultUnlocked: Bool, extremeEnabled: Bool) -> [Dilemma] {
+        guard adultUnlocked, extremeEnabled else { return all }
+        return all + extreme
+    }
 }

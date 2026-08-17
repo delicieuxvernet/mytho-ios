@@ -36,6 +36,8 @@ struct WouldYouRatherView: View {
     @State private var step: Step = .setup
     @State private var mode: WouldYouRatherMode = .debate
     @State private var limit: WouldYouRatherLimit = .standard
+    @State private var extremeEnabled = false
+    @State private var showAgeGate = false
     @State private var engine: WouldYouRatherEngine?
     /// Les points de la soirée, conservés d'une partie à l'autre.
     @State private var partyScores = ScoreBoard()
@@ -195,6 +197,7 @@ struct WouldYouRatherView: View {
                     setupHeader
                     modePicker
                     if mode != .survival { lengthPicker }
+                    extremePanel
                     if mode.identifiesVoters { rosterSummary }
                 }
                 .padding(.horizontal, Theme.gutter)
@@ -221,6 +224,53 @@ struct WouldYouRatherView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Le pack Extrême : une porte d'âge tant qu'il est verrouillé, un simple
+    /// interrupteur ensuite. Même doctrine que les deux autres jeux.
+    private var extremePanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionTitle("Pack Extrême · 18+")
+            if settings.adultContentUnlocked {
+                OptionToggle(
+                    title: "Dilemmes Extrême · 60 cartes",
+                    subtitle: "Dégoût, hontes et dilemmes qu'on regrette d'avoir posés.",
+                    isOn: $extremeEnabled
+                )
+            } else {
+                Button {
+                    Haptics.tap()
+                    showAgeGate = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 13, weight: .bold))
+                            .accessibilityHidden(true)
+                        Text("Débloquer les dilemmes Extrême")
+                            .font(Theme.body(15))
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .bold))
+                            .accessibilityHidden(true)
+                    }
+                    .foregroundStyle(skin.ink)
+                    .frame(minHeight: Theme.touchTarget)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(PressedStyle())
+                .accessibilityLabel("Débloquer le pack Extrême, réservé aux adultes")
+                .alert("Réservé aux adultes", isPresented: $showAgeGate) {
+                    Button("J'ai 18 ans ou plus") {
+                        if settings.setAdultContent(true, ageConfirmed: true) {
+                            extremeEnabled = true
+                        }
+                    }
+                    Button("Annuler", role: .cancel) {}
+                } message: {
+                    Text("Ce pack contient des thèmes crus et des références à l'alcool.")
+                }
+            }
+        }
     }
 
     private var modePicker: some View {
@@ -1128,7 +1178,7 @@ struct WouldYouRatherView: View {
             mode: mode,
             limit: limit,
             players: ids,
-            deck: WouldYouRatherEngine.makeDeck(),
+            deck: WouldYouRatherEngine.makeDeck(adultUnlocked: settings.adultContentUnlocked, extremeEnabled: extremeEnabled),
             scores: board
         )
         var generator = SystemRandomNumberGenerator()

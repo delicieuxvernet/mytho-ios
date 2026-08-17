@@ -169,8 +169,16 @@ struct WouldYouRatherEngine {
     /// cours de soirée ne doit pas faire revenir les dilemmes déjà vus.
     static let deckID = "would-you-rather"
 
-    static func makeDeck(store: any DeckMemoryStore = UserDefaultsDeckMemory.shared) -> Deck<Dilemma> {
-        Deck(id: deckID, items: WouldYouRatherBank.all, store: store)
+    static func makeDeck(
+        adultUnlocked: Bool = false,
+        extremeEnabled: Bool = false,
+        store: any DeckMemoryStore = UserDefaultsDeckMemory.shared
+    ) -> Deck<Dilemma> {
+        Deck(
+            id: deckID,
+            items: WouldYouRatherBank.dilemmas(adultUnlocked: adultUnlocked, extremeEnabled: extremeEnabled),
+            store: store
+        )
     }
 
     // MARK: Configuration

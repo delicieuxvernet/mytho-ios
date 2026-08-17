@@ -146,7 +146,10 @@ def run(which: str) -> bool:
         )
         entries = [(i, f"{a} / {b}") for i, a, b in raw]
         options = [(i, a) for i, a, _ in raw] + [(i, b) for i, _, b in raw]
-        ok &= check("Tu préfères (paires)", entries, 200, "wyr_")
+        base = [e for e in entries if int(e[0][4:]) <= 200]
+        adult = [e for e in entries if int(e[0][4:]) > 200]
+        ok &= check("Tu préfères (base)", base, 200, "wyr_")
+        ok &= check("Tu préfères (Extrême 18+)", adult, 60, adult=True)
         too_long = [(i, len(t)) for i, t in options if len(t) > 60]
         if too_long:
             print(f"  ECHEC options > 60 : {too_long[:4]}")
