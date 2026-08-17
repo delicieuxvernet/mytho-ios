@@ -28,6 +28,7 @@ struct MostLikelyView: View {
     /// la copie ne peut donc pas diverger de l'original entre-temps.
     @State private var cardSnapshot: MostLikelyEngine?
     @State private var options = MostLikelyEngine.Options()
+    @State private var showAgeGate = false
     /// Désignations en cours de saisie : une, ou deux si « Ex æquo » est ouvert.
     @State private var picks: [UUID] = []
     @State private var allowsTie = false
@@ -155,7 +156,46 @@ struct MostLikelyView: View {
                         isOn: packBinding(pack)
                     )
                 }
+
+                if !settings.adultContentUnlocked {
+                    unlockRow
+                }
             }
+        }
+    }
+
+    /// Même porte que « Je n'ai jamais » : l'âge se confirme, il ne se coche pas.
+    private var unlockRow: some View {
+        Button {
+            Haptics.tap()
+            showAgeGate = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 13, weight: .bold))
+                    .accessibilityHidden(true)
+                Text("Paquet Détraqué · 18+")
+                    .font(Theme.body(15))
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .accessibilityHidden(true)
+            }
+            .foregroundStyle(skin.ink)
+            .frame(minHeight: Theme.touchTarget)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressedStyle())
+        .accessibilityLabel("Débloquer le paquet Détraqué, réservé aux adultes")
+        .alert("Réservé aux adultes", isPresented: $showAgeGate) {
+            Button("J'ai 18 ans ou plus") {
+                if settings.setAdultContent(true, ageConfirmed: true) {
+                    options.packs.insert(.detraque)
+                }
+            }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("Ce paquet contient des thèmes suggestifs et des références à l'alcool.")
         }
     }
 

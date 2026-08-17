@@ -47,7 +47,26 @@ def banned_hits(entries):
     return hits
 
 
-def check(name, entries, expected_count, id_prefix=None, max_len=None):
+# Ce qui reste interdit MEME dans les packs 18+ (regle 1.1.4 + lignes rouges) :
+# le graphique, le non-consenti, les mineurs, les drogues dures, les marques.
+BANNED_ADULT = [
+    "viol", "violer", "mineur", "mineure", "mineurs", "inceste",
+    "cocaine", "heroine", "crack", "seringue",
+    "tiktok", "instagram", "netflix", "tinder", "snapchat", "uber",
+]
+
+
+def adult_hits(entries):
+    hits = []
+    for ident, text in entries:
+        words = set(re.findall(r"[a-z]+", norm(text)))
+        bad = words & set(BANNED_ADULT)
+        if bad:
+            hits.append((ident, text, sorted(bad)))
+    return hits
+
+
+def check(name, entries, expected_count, id_prefix=None, max_len=None, adult=False):
     ok = True
     print(f"--- {name} : {len(entries)} entrées")
     if len(entries) != expected_count:
@@ -72,9 +91,9 @@ def check(name, entries, expected_count, id_prefix=None, max_len=None):
         if too_long:
             print(f"  ECHEC longueurs > {max_len} : {too_long[:4]}")
             ok = False
-    hits = banned_hits(entries)
+    hits = adult_hits(entries) if adult else banned_hits(entries)
     if hits:
-        print("  ECHEC lexique 4+ :")
+        print("  ECHEC lexique 18+ :" if adult else "  ECHEC lexique 4+ :")
         for ident, text, bad in hits[:6]:
             print(f"    {ident} [{','.join(bad)}] {text}")
         ok = False
@@ -95,13 +114,27 @@ def run(which: str) -> bool:
             r'card\((\d+),\s*"((?:[^"\\]|\\.)*)"\)',
         )
         entries = [(f"nhie_{int(n):03d}", t) for n, t in entries]
-        ok &= check("Je n'ai jamais", entries, 190, "nhie_", max_len=70)
+        base = [e for e in entries if int(e[0][5:]) <= 190]
+        adult = [e for e in entries if int(e[0][5:]) > 190]
+        ok &= check("Je n'ai jamais (base)", base, 190, max_len=70)
+        ok &= check("Je n'ai jamais (18+)", adult, 60, max_len=70, adult=True)
+        ids = [e[0] for e in entries]
+        if ids != [f"nhie_{i:03d}" for i in range(1, 251)]:
+            print("  ECHEC sequence globale nhie_001..250")
+            ok = False
     if which in ("ml", "all"):
         entries = load(
             "Mytho/Core/Games/MostLikely/MostLikelyContent.swift",
             r'MostLikelyCard\(id:\s*"(mst_\d+)",\s*text:\s*"((?:[^"\\]|\\.)*)"\)',
         )
-        ok &= check("Le plus susceptible", entries, 260, "mst_", max_len=90)
+        base = [e for e in entries if int(e[0][4:]) <= 260]
+        adult = [e for e in entries if int(e[0][4:]) > 260]
+        ok &= check("Le plus susceptible (base)", base, 260, max_len=90)
+        ok &= check("Le plus susceptible (18+)", adult, 40, max_len=90, adult=True)
+        ids = [e[0] for e in entries]
+        if ids != [f"mst_{i:03d}" for i in range(1, 301)]:
+            print("  ECHEC sequence globale mst_001..300")
+            ok = False
     if which in ("wyr", "all"):
         src = open(
             f"{REPO}/Mytho/Core/Games/WouldYouRather/WouldYouRatherContent.swift",

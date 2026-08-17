@@ -470,12 +470,13 @@ final class MostLikelyTests: XCTestCase {
         XCTAssertEqual(MostLikelyPack.soiree.cards.count, 120)
         XCTAssertEqual(MostLikelyPack.potes.cards.count, 80)
         XCTAssertEqual(MostLikelyPack.epice.cards.count, 60)
+        XCTAssertEqual(MostLikelyPack.detraque.cards.count, 40)
         XCTAssertEqual(
             MostLikelyBank.cards(for: MostLikelyPack.defaultSelection).count,
             200,
             "Les deux paquets ouverts font les 200 cartes annoncées"
         )
-        XCTAssertEqual(MostLikelyBank.all.count, 260)
+        XCTAssertEqual(MostLikelyBank.all.count, 300)
     }
 
     func testNoCardIsEmptyOrDuplicated() {
@@ -528,10 +529,12 @@ final class MostLikelyTests: XCTestCase {
 
     /// Les trois paquets sont tout public : aucun ne doit rester derrière le
     /// réglage de contenu adulte, sinon 60 cartes ne sortent jamais.
-    func testEveryPackIsReachableWithoutUnlockingAnything() {
-        XCTAssertEqual(MostLikelyPack.available(unlockedExtras: false).count, MostLikelyPack.allCases.count)
+    func testOnlyTheAdultPackHidesBehindTheAgeGate() {
         XCTAssertTrue(MostLikelyPack.available(unlockedExtras: false).contains(.epice))
-        XCTAssertFalse(MostLikelyPack.defaultSelection.contains(.epice), "Proposé, mais pas coché d'office")
+        XCTAssertFalse(MostLikelyPack.available(unlockedExtras: false).contains(.detraque),
+                       "Le 18+ reste invisible tant que l'âge n'est pas confirmé")
+        XCTAssertTrue(MostLikelyPack.available(unlockedExtras: true).contains(.detraque))
+        XCTAssertFalse(MostLikelyPack.defaultSelection.contains(.detraque), "Jamais coché d'office")
     }
 
     /// Un réglage sauvegardé qui ne pointe plus sur rien ne doit pas rendre une

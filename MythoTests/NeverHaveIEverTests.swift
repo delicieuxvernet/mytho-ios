@@ -496,27 +496,28 @@ final class NeverHaveIEverTests: XCTestCase {
     func testTheAnnouncedVolumeIsThere() {
         XCTAssertEqual(NeverHaveIEverBank.pack(id: "soft")?.cards.count, 100)
         XCTAssertEqual(NeverHaveIEverBank.pack(id: "potes")?.cards.count, 90)
-        XCTAssertEqual(NeverHaveIEverBank.allCards.count, 190)
+        XCTAssertEqual(NeverHaveIEverBank.allCards.count, 250)
     }
 
-    /// Le pack épicé est livré **verrouillé et vide** : son contenu ferait
-    /// basculer la fiche App Store en 17+, même verrouillé (spec §8), alors que
-    /// l'app est déjà déposée en 4+.
-    func testTheLockedPackShipsEmptyAndStaysInvisible() {
+    /// Le pack épicé est 18+ : verrouillé tant que l'âge n'est pas confirmé,
+    /// jouable ensuite. 60 cartes depuis la 1.1.
+    func testTheSpicyPackIsLockedButFull() {
         let epice = NeverHaveIEverBank.pack(id: "epice")
         XCTAssertEqual(epice?.isLocked, true)
-        XCTAssertEqual(epice?.cards.count, 0)
+        XCTAssertEqual(epice?.cards.count, 60)
 
         XCTAssertFalse(NeverHaveIEverBank.selectablePacks(adultUnlocked: false).contains { $0.id == "epice" })
-        XCTAssertFalse(
+        XCTAssertTrue(
             NeverHaveIEverBank.selectablePacks(adultUnlocked: true).contains { $0.id == "epice" },
-            "Un paquet vide n'a rien à faire dans une liste de choix, même déverrouillé"
+            "Une fois l'âge confirmé, le pack doit apparaître"
         )
     }
 
     func testPackSelectionFallsBackRatherThanShippingAnEmptyDeck() {
         XCTAssertEqual(NeverHaveIEverBank.cards(in: ["soft"], adultUnlocked: false).count, 100)
         XCTAssertEqual(NeverHaveIEverBank.cards(in: ["soft", "potes"], adultUnlocked: false).count, 190)
+        XCTAssertEqual(NeverHaveIEverBank.cards(in: ["soft", "potes", "epice"], adultUnlocked: false).count, 190, "Le verrou retire les cartes 18+ même si le réglage sauvegardé les liste")
+        XCTAssertEqual(NeverHaveIEverBank.cards(in: ["soft", "potes", "epice"], adultUnlocked: true).count, 250)
         XCTAssertEqual(
             NeverHaveIEverBank.cards(in: [], adultUnlocked: false).count, 190,
             "Une sélection vide retombe sur les paquets par défaut"

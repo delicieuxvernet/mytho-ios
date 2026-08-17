@@ -307,14 +307,71 @@ enum NeverHaveIEverBank {
     ///
     /// L'app est classée **4+** et a été soumise à Apple en déclarant aucune
     /// référence à l'alcool, au tabac, aux drogues, au sexe ni à aucun thème
-    /// mature. Livrer ce pack ferait basculer la fiche en 17+ **même verrouillé**
-    /// (spec §8) et invaliderait la classification déjà déposée — or « la
-    /// décision se prend avant la première soumission, pas après ».
-    ///
-    /// Le verrou, lui, est entièrement câblé : `isLocked` ici,
-    /// `AppSettings.adultContentUnlocked` côté réglages, filtrage dans
-    /// `cards(in:adultUnlocked:)`, pack absent de `selectablePacks`. Le jour où
-    /// la classification sera tranchée, il n'y aura plus que des cartes à
-    /// écrire à cet endroit.
-    private static let epiceCards: [ConfessionCard] = []
+    /// Pack 18+, demandé par Arthur pour la 1.1 — la fiche App Store bascule
+    /// en 17+ avec cette version, la déclaration d'âge est mise à jour au même
+    /// moment. Registre Picolo : cru, suggestif, alcool assumé. Les limites qui
+    /// ne se franchissent pas, même en 17+ : rien de graphiquement explicite
+    /// (règle 1.1.4), rien sans consentement, rien impliquant des mineurs.
+    private static let epiceCards: [ConfessionCard] = [
+        card(191, "embrassé quelqu'un dont j'ignorais le prénom"),
+        card(192, "regretté un match dès le lendemain matin"),
+        card(193, "envoyé un message coquin au mauvais destinataire"),
+        card(194, "menti sur mon nombre d'ex"),
+        card(195, "fait semblant d'être célibataire en soirée"),
+        card(196, "dragué pour me venger de quelqu'un d'autre"),
+        card(197, "eu un crush sur le ou la partenaire d'un ami"),
+        card(198, "embrassé deux personnes le même soir"),
+        card(199, "fini une soirée dans un lit qui n'était pas le mien"),
+        card(200, "oublié comment j'étais rentré"),
+        card(201, "bu pour me donner du courage avant de draguer"),
+        card(202, "vomi dans un endroit que je n'avouerai jamais"),
+        card(203, "dansé sur une table avant minuit"),
+        card(204, "perdu un vêtement au cours d'une soirée"),
+        card(205, "envoyé un sexto puis tout supprimé en panique"),
+        card(206, "gardé une photo compromettante de moi"),
+        card(207, "fouillé le téléphone de mon ou ma partenaire"),
+        card(208, "simulé plus d'expérience que je n'en avais"),
+        card(209, "dit un prénom qui n'était pas le bon au pire moment"),
+        card(210, "eu une aventure d'un soir"),
+        card(211, "fantasmé sur quelqu'un croisé dans les transports"),
+        card(212, "envisagé un plan à trois"),
+        card(213, "embrassé un ami ou une amie « juste pour voir »"),
+        card(214, "utilisé une appli de rencontre en étant en couple"),
+        card(215, "envisagé de fuir un rencard par les toilettes"),
+        card(216, "donné une fausse identité à un rencard"),
+        card(217, "pleuré après un moment intime"),
+        card(218, "envoyé « je t'aime » trop tôt et regretté aussitôt"),
+        card(219, "stalké l'ex de mon ex"),
+        card(220, "comparé deux ex entre eux"),
+        card(221, "recontacté un ex « juste pour prendre des nouvelles »"),
+        card(222, "répondu à un ex après minuit en sachant très bien pourquoi"),
+        card(223, "inventé une urgence pour écourter un rencard"),
+        card(224, "embrassé quelqu'un pour rendre jaloux quelqu'un d'autre"),
+        card(225, "flirté avec le serveur ou la serveuse"),
+        card(226, "eu des vues sur quelqu'un de totalement inaccessible"),
+        card(227, "accepté un rencard uniquement pour le restaurant"),
+        card(228, "porté un col roulé en été pour cacher un suçon"),
+        card(229, "inventé un ou une partenaire imaginaire"),
+        card(230, "été surpris en galante compagnie par mes parents"),
+        card(231, "fait une déclaration après trois verres"),
+        card(232, "regardé le profil d'un ex avec un faux compte"),
+        card(233, "eu honte de mon historique de recherche"),
+        card(234, "envoyé « par hasard » une photo avantageuse à un ex"),
+        card(235, "gardé les messages d'un ex « pour les souvenirs »"),
+        card(236, "caché une relation régulière à mes amis"),
+        card(237, "rougi devant la personne qui peuplait mes rêves"),
+        card(238, "menti sur la vraie raison de mes cernes"),
+        card(239, "noté mes ex sur dix"),
+        card(240, "révélé un secret en parlant dans mon sommeil"),
+        card(241, "embrassé quelqu'un du groupe en le cachant au groupe"),
+        card(242, "eu un faible pour le meilleur ami de mon ex"),
+        card(243, "dragué avec des répliques trouvées sur internet"),
+        card(244, "quitté une soirée discrètement pour rejoindre quelqu'un"),
+        card(245, "reçu un message coquin pendant un repas de famille"),
+        card(246, "répondu à un message coquin en pleine réunion"),
+        card(247, "laissé croire qu'on était ensemble sans démentir"),
+        card(248, "flirté à un mariage"),
+        card(249, "juré « plus jamais l'alcool » un dimanche matin"),
+        card(250, "fini au petit matin les chaussures à la main")
+    ]
 }

@@ -29,6 +29,7 @@ struct NeverHaveIEverView: View {
     @State private var engine: NeverHaveIEverEngine?
     @State private var rules = NeverHaveIEverEngine.Rules()
     @State private var packIDs = NeverHaveIEverBank.defaultPackIDs
+    @State private var showAgeGate = false
 
     var body: some View {
         ZStack {
@@ -240,11 +241,64 @@ struct NeverHaveIEverView: View {
                 .font(Theme.caption(12))
                 .foregroundStyle(skin.ink.opacity(0.75))
 
-            // Le pack verrouillé n'apparaît jamais tant qu'il ne l'est plus, et
-            // il est vide de toute façon : voir le commentaire de `epiceCards`.
+            // Le pack verrouillé n'apparaît qu'une fois l'âge confirmé ; en
+            // attendant, une rangée dédiée propose le déverrouillage.
             ForEach(NeverHaveIEverBank.selectablePacks(adultUnlocked: settings.adultContentUnlocked)) { pack in
                 packRow(pack)
             }
+
+            if !settings.adultContentUnlocked {
+                unlockRow
+            }
+        }
+    }
+
+    /// La confirmation d'âge est une porte, pas un interrupteur : on ne peut
+    /// pas activer le pack sans être passé par la question.
+    private var unlockRow: some View {
+        Button {
+            Haptics.tap()
+            showAgeGate = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Theme.night)
+                    .frame(width: 30, height: 30)
+                    .background(
+                        Circle()
+                            .fill(Theme.amber)
+                            .overlay(Circle().strokeBorder(skin.outline, lineWidth: 2))
+                    )
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Pack Épicé · 18+")
+                        .font(Theme.body(15))
+                        .foregroundStyle(skin.ink)
+                    Text("60 cartes crues, réservées aux adultes.")
+                        .font(Theme.caption(12))
+                        .foregroundStyle(skin.ink.opacity(0.75))
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(skin.inkFaint)
+                    .accessibilityHidden(true)
+            }
+            .frame(minHeight: Theme.touchTarget)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressedStyle())
+        .accessibilityLabel("Débloquer le pack Épicé, réservé aux adultes")
+        .alert("Réservé aux adultes", isPresented: $showAgeGate) {
+            Button("J'ai 18 ans ou plus") {
+                if settings.setAdultContent(true, ageConfirmed: true) {
+                    packIDs.insert("epice")
+                }
+            }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("Ce pack contient des thèmes suggestifs et des références à l'alcool.")
         }
     }
 
