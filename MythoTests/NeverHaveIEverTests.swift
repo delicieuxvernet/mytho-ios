@@ -523,8 +523,12 @@ final class NeverHaveIEverTests: XCTestCase {
             "Une sélection vide retombe sur les paquets par défaut"
         )
         XCTAssertEqual(
-            NeverHaveIEverBank.cards(in: ["epice"], adultUnlocked: true).count, 190,
-            "Le pack verrouillé étant vide, la sélection retombe sur les paquets par défaut"
+            NeverHaveIEverBank.cards(in: ["epice"], adultUnlocked: true).count, 60,
+            "Le pack 18+ seul est une sélection valable une fois l'âge confirmé"
+        )
+        XCTAssertEqual(
+            NeverHaveIEverBank.cards(in: ["disparu"], adultUnlocked: false).count, 190,
+            "Une sélection qui ne pointe plus sur rien retombe sur les paquets par défaut"
         )
     }
 
@@ -565,7 +569,11 @@ final class NeverHaveIEverTests: XCTestCase {
             "porno", "casino", "pari", "parié", "parier", "arme", "armes"
         ]
 
-        for card in NeverHaveIEverBank.allCards {
+        // Seuls les packs accessibles SANS confirmation d'âge portent la
+        // promesse tout public : le pack Épicé vit derrière le verrou 17+ et
+        // a son propre test.
+        let publicCards = NeverHaveIEverBank.cards(in: ["soft", "potes"], adultUnlocked: false)
+        for card in publicCards {
             let words = card.text
                 .lowercased()
                 .components(separatedBy: CharacterSet.letters.inverted)
@@ -573,6 +581,28 @@ final class NeverHaveIEverTests: XCTestCase {
 
             for word in words {
                 XCTAssertFalse(banned.contains(word), "\(card.id) contient « \(word) » : « \(card.text) »")
+            }
+        }
+    }
+
+    /// Le pack 18+ a ses propres lignes rouges — plus courtes, mais absolues :
+    /// rien de graphiquement explicite, rien sans consentement, aucun mineur,
+    /// aucune marque. Le cru et l'alcool y sont, eux, assumés.
+    func testTheAdultPackKeepsItsOwnRedLines() {
+        let banned: Set<String> = [
+            "viol", "violée", "violer", "mineur", "mineure", "mineurs", "inceste",
+            "cocaïne", "héroïne", "crack", "seringue",
+            "tiktok", "instagram", "netflix", "tinder", "snapchat", "uber"
+        ]
+        let adult = NeverHaveIEverBank.pack(id: "epice")?.cards ?? []
+        XCTAssertEqual(adult.count, 60)
+        for card in adult {
+            let words = card.text
+                .lowercased()
+                .components(separatedBy: CharacterSet.letters.inverted)
+                .filter { !$0.isEmpty }
+            for word in words {
+                XCTAssertFalse(banned.contains(word), "\(card.id) contient « \(word) »")
             }
         }
     }
