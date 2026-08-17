@@ -90,6 +90,7 @@ struct MostLikelyView: View {
                 VStack(spacing: 14) {
                     setupHeader
                     packsPanel
+                    detraqueBanner
                     roundsPanel
                     countingPanel
                     if !hasEnoughPlayers { notEnoughPlayersNotice }
@@ -149,44 +150,30 @@ struct MostLikelyView: View {
             VStack(alignment: .leading, spacing: 12) {
                 panelTitle("Paquets", symbol: "rectangle.stack.fill")
 
-                ForEach(MostLikelyPack.available(unlockedExtras: settings.adultContentUnlocked)) { pack in
+                // Les paquets tout public seulement : le Détraqué vit dans son
+                // bandeau rose sous le panneau, il ne se fond jamais ici.
+                ForEach(MostLikelyPack.available(unlockedExtras: settings.adultContentUnlocked)
+                    .filter { $0 != .detraque }) { pack in
                     OptionToggle(
                         title: "\(pack.name) · \(pack.cards.count) cartes",
                         subtitle: pack.subtitle,
                         isOn: packBinding(pack)
                     )
                 }
-
-                if !settings.adultContentUnlocked {
-                    unlockRow
-                }
             }
         }
     }
 
-    /// Même porte que « Je n'ai jamais » : l'âge se confirme, il ne se coche pas.
-    private var unlockRow: some View {
-        Button {
-            Haptics.tap()
-            showAgeGate = true
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 13, weight: .bold))
-                    .accessibilityHidden(true)
-                Text("Paquet Détraqué · 18+")
-                    .font(Theme.body(15))
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .accessibilityHidden(true)
-            }
-            .foregroundStyle(skin.ink)
-            .frame(minHeight: Theme.touchTarget)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressedStyle())
-        .accessibilityLabel("Débloquer le paquet Détraqué, réservé aux adultes")
+    /// Le paquet 18+ en bandeau : l'argument de vente de l'app, sous les
+    /// paquets. Même porte que « Je n'ai jamais » : l'âge se confirme.
+    private var detraqueBanner: some View {
+        AdultPackBanner(
+            title: "Paquet Détraqué · 18+",
+            subtitle: "40 cartes de fou furieux : garde à vue, sextos, zéro regret.",
+            unlocked: settings.adultContentUnlocked,
+            isOn: packBinding(.detraque),
+            onUnlock: { showAgeGate = true }
+        )
         .alert("Réservé aux adultes", isPresented: $showAgeGate) {
             Button("J'ai 18 ans ou plus") {
                 if settings.setAdultContent(true, ageConfirmed: true) {
@@ -195,7 +182,7 @@ struct MostLikelyView: View {
             }
             Button("Annuler", role: .cancel) {}
         } message: {
-            Text("Ce paquet contient des thèmes suggestifs et des références à l'alcool.")
+            Text("Ce paquet contient des thèmes crus et des références à l'alcool.")
         }
     }
 

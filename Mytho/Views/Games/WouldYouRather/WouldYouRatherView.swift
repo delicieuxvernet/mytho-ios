@@ -226,50 +226,26 @@ struct WouldYouRatherView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Le pack Extrême : une porte d'âge tant qu'il est verrouillé, un simple
-    /// interrupteur ensuite. Même doctrine que les deux autres jeux.
+    /// Le pack Extrême en bandeau rose : l'argument de vente de l'app, posé
+    /// entre les réglages. Porte d'âge tant qu'il est verrouillé, interrupteur
+    /// ensuite — même doctrine que les deux autres jeux.
     private var extremePanel: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionTitle("Pack Extrême · 18+")
-            if settings.adultContentUnlocked {
-                OptionToggle(
-                    title: "Dilemmes Extrême · 60 cartes",
-                    subtitle: "Dégoût, hontes et dilemmes qu'on regrette d'avoir posés.",
-                    isOn: $extremeEnabled
-                )
-            } else {
-                Button {
-                    Haptics.tap()
-                    showAgeGate = true
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: 13, weight: .bold))
-                            .accessibilityHidden(true)
-                        Text("Débloquer les dilemmes Extrême")
-                            .font(Theme.body(15))
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .bold))
-                            .accessibilityHidden(true)
-                    }
-                    .foregroundStyle(skin.ink)
-                    .frame(minHeight: Theme.touchTarget)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(PressedStyle())
-                .accessibilityLabel("Débloquer le pack Extrême, réservé aux adultes")
-                .alert("Réservé aux adultes", isPresented: $showAgeGate) {
-                    Button("J'ai 18 ans ou plus") {
-                        if settings.setAdultContent(true, ageConfirmed: true) {
-                            extremeEnabled = true
-                        }
-                    }
-                    Button("Annuler", role: .cancel) {}
-                } message: {
-                    Text("Ce pack contient des thèmes crus et des références à l'alcool.")
+        AdultPackBanner(
+            title: "Dilemmes Extrême · 18+",
+            subtitle: "60 dilemmes qu'on regrette d'avoir posés.",
+            unlocked: settings.adultContentUnlocked,
+            isOn: $extremeEnabled,
+            onUnlock: { showAgeGate = true }
+        )
+        .alert("Réservé aux adultes", isPresented: $showAgeGate) {
+            Button("J'ai 18 ans ou plus") {
+                if settings.setAdultContent(true, ageConfirmed: true) {
+                    extremeEnabled = true
                 }
             }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("Ce pack contient des thèmes crus et des références à l'alcool.")
         }
     }
 

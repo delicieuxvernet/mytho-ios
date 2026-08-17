@@ -66,7 +66,9 @@ struct NeverHaveIEverEngine {
         init(
             startingLives: Int = NeverHaveIEverEngine.defaultLives,
             mode: ConfessionMode = .honour,
-            eliminates: Bool = true,
+            // Sans élimination par défaut (choix produit du 17 août) : personne
+            // ne sort, les grands groupes restent à table jusqu'au classement.
+            eliminates: Bool = false,
             cardLimit: Int? = NeverHaveIEverEngine.defaultCardLimit
         ) {
             // Une partie à zéro vie se terminerait sur la première carte.

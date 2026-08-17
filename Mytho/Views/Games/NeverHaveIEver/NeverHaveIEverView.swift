@@ -28,7 +28,9 @@ struct NeverHaveIEverView: View {
 
     @State private var engine: NeverHaveIEverEngine?
     @State private var rules = NeverHaveIEverEngine.Rules()
-    @State private var packIDs = NeverHaveIEverBank.defaultPackIDs
+    // Aucun paquet pré-coché (choix produit du 17 août) : la table choisit,
+    // et le bandeau Épicé se présente à égalité de geste avec le reste.
+    @State private var packIDs: Set<String> = []
     @State private var showAgeGate = false
 
     var body: some View {
@@ -210,6 +212,8 @@ struct NeverHaveIEverView: View {
 
                     Panel { packPicker }
 
+                    epiceBanner
+
                     Color.clear.frame(height: 8)
                 }
                 .padding(.horizontal, Theme.gutter)
@@ -241,55 +245,28 @@ struct NeverHaveIEverView: View {
                 .font(Theme.caption(12))
                 .foregroundStyle(skin.ink.opacity(0.75))
 
-            // Le pack verrouillé n'apparaît qu'une fois l'âge confirmé ; en
-            // attendant, une rangée dédiée propose le déverrouillage.
-            ForEach(NeverHaveIEverBank.selectablePacks(adultUnlocked: settings.adultContentUnlocked)) { pack in
+            // Les paquets tout public seulement : l'Épicé vit dans son bandeau
+            // rose sous le panneau, il ne se fond jamais dans la liste.
+            ForEach(NeverHaveIEverBank.selectablePacks(adultUnlocked: settings.adultContentUnlocked)
+                .filter { !$0.isLocked }) { pack in
                 packRow(pack)
-            }
-
-            if !settings.adultContentUnlocked {
-                unlockRow
             }
         }
     }
 
-    /// La confirmation d'âge est une porte, pas un interrupteur : on ne peut
-    /// pas activer le pack sans être passé par la question.
-    private var unlockRow: some View {
-        Button {
-            Haptics.tap()
-            showAgeGate = true
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Theme.night)
-                    .frame(width: 30, height: 30)
-                    .background(
-                        Circle()
-                            .fill(Theme.amber)
-                            .overlay(Circle().strokeBorder(skin.outline, lineWidth: 2))
-                    )
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Pack Épicé · 18+")
-                        .font(Theme.body(15))
-                        .foregroundStyle(skin.ink)
-                    Text("60 cartes crues, réservées aux adultes.")
-                        .font(Theme.caption(12))
-                        .foregroundStyle(skin.ink.opacity(0.75))
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(skin.inkFaint)
-                    .accessibilityHidden(true)
-            }
-            .frame(minHeight: Theme.touchTarget)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressedStyle())
-        .accessibilityLabel("Débloquer le pack Épicé, réservé aux adultes")
+    /// Le pack 18+ en bandeau : l'argument de vente de l'app, sous les
+    /// paquets. La confirmation d'âge reste une porte, pas un interrupteur.
+    private var epiceBanner: some View {
+        AdultPackBanner(
+            title: "Pack Épicé · 18+",
+            subtitle: "60 cartes crues : sextos, plans d'un soir, lendemains flous.",
+            unlocked: settings.adultContentUnlocked,
+            isOn: Binding(
+                get: { packIDs.contains("epice") },
+                set: { if $0 { packIDs.insert("epice") } else { packIDs.remove("epice") } }
+            ),
+            onUnlock: { showAgeGate = true }
+        )
         .alert("Réservé aux adultes", isPresented: $showAgeGate) {
             Button("J'ai 18 ans ou plus") {
                 if settings.setAdultContent(true, ageConfirmed: true) {
@@ -298,7 +275,7 @@ struct NeverHaveIEverView: View {
             }
             Button("Annuler", role: .cancel) {}
         } message: {
-            Text("Ce pack contient des thèmes suggestifs et des références à l'alcool.")
+            Text("Ce pack contient des thèmes crus et des références à l'alcool.")
         }
     }
 
@@ -348,9 +325,8 @@ struct NeverHaveIEverView: View {
     }
 
     private func toggle(pack: ConfessionPack) {
+        // Tout décocher est permis : c'est « Commencer » qui exige un paquet.
         if packIDs.contains(pack.id) {
-            // Décocher le dernier paquet lancerait une partie sans carte.
-            guard packIDs.count > 1 else { return }
             packIDs.remove(pack.id)
         } else {
             packIDs.insert(pack.id)
@@ -359,8 +335,8 @@ struct NeverHaveIEverView: View {
 
     private var startBar: some View {
         VStack(spacing: 6) {
-            if !hasEnoughPlayers {
-                Text(missingPlayersLabel)
+            if let notice = startNotice {
+                Text(notice)
                     .font(Theme.caption(13))
                     .foregroundStyle(skin.ink.opacity(0.75))
                     .multilineTextAlignment(.center)
@@ -372,7 +348,7 @@ struct NeverHaveIEverView: View {
                 systemImage: "play.fill",
                 tint: Theme.mint,
                 foreground: Theme.night,
-                isEnabled: hasEnoughPlayers
+                isEnabled: hasEnoughPlayers && !packIDs.isEmpty
             ) {
                 startGame()
             }
@@ -396,6 +372,14 @@ struct NeverHaveIEverView: View {
         roster.activePlayers.count >= NeverHaveIEverEngine.minPlayers
     }
 
+    /// Ce qui manque avant de lancer, joueurs d'abord : sans table, le choix
+    /// des paquets n'a pas encore de sens.
+    private var startNotice: String? {
+        if !hasEnoughPlayers { return missingPlayersLabel }
+        if packIDs.isEmpty { return "Choisis au moins un paquet de cartes." }
+        return nil
+    }
+
     private var missingPlayersLabel: String {
         let missing = NeverHaveIEverEngine.minPlayers - roster.activePlayers.count
         return missing <= 1
@@ -405,7 +389,7 @@ struct NeverHaveIEverView: View {
 
     private func startGame() {
         let ids = roster.activePlayers.map(\.id)
-        guard ids.count >= NeverHaveIEverEngine.minPlayers else { return }
+        guard ids.count >= NeverHaveIEverEngine.minPlayers, !packIDs.isEmpty else { return }
 
         var game = NeverHaveIEverEngine(
             playerIDs: ids,

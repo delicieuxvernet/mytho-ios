@@ -23,6 +23,9 @@ enum Theme {
     static let crimson = Color(red: 0.937, green: 0.325, blue: 0.365)
     /// Bleu ciel : la phase de description.
     static let sky = Color(red: 0.298, green: 0.788, blue: 0.941)
+    /// Rose vif : les packs 18+, toujours en bandeau — c'est l'argument de
+    /// vente de l'app, jamais une rangée parmi d'autres (choix du 17 août).
+    static let rose = Color(red: 0.839, green: 0.129, blue: 0.373)
 
     /// Chaque phase du jeu a sa température.
     static func accent(for phase: GamePhase?) -> Color {

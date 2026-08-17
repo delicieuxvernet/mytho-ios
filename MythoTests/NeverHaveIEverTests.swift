@@ -488,7 +488,7 @@ final class NeverHaveIEverTests: XCTestCase {
         XCTAssertEqual(NeverHaveIEverEngine.livesChoices, [3, 5, 7])
         XCTAssertEqual(NeverHaveIEverEngine.minPlayers, 3)
         XCTAssertEqual(NeverHaveIEverEngine.Rules().mode, .honour)
-        XCTAssertTrue(NeverHaveIEverEngine.Rules().eliminates)
+        XCTAssertFalse(NeverHaveIEverEngine.Rules().eliminates, "Défaut produit du 17 août : sans élimination")
     }
 
     // MARK: Contenu

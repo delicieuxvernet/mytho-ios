@@ -233,6 +233,97 @@ struct OptionToggle: View {
     }
 }
 
+// MARK: - Bandeau 18+
+
+/// Le pack adulte en bandeau rose, cerclé d'encre sur ombre franche, au milieu
+/// de réglages restés sur papier — maquette B validée par Arthur le 17 août.
+/// Verrouillé, tout le bandeau est la porte d'âge ; déverrouillé, un appui
+/// n'importe où bascule l'interrupteur jaune. L'alerte d'âge reste au site
+/// d'appel : chaque jeu décide quoi cocher une fois l'âge confirmé.
+struct AdultPackBanner: View {
+    @Environment(\.skin) private var skin
+
+    let title: String
+    let subtitle: String
+    let unlocked: Bool
+    @Binding var isOn: Bool
+    let onUnlock: () -> Void
+
+    var body: some View {
+        Button {
+            Haptics.tap()
+            if unlocked { isOn.toggle() } else { onUnlock() }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: unlocked ? "flame.fill" : "lock.fill")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Theme.amber)
+                    .frame(width: 32, height: 32)
+                    .background(
+                        Circle()
+                            .fill(Theme.night)
+                            .overlay(Circle().strokeBorder(skin.outline, lineWidth: 2))
+                    )
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(Theme.body(16))
+                        .foregroundStyle(.white)
+                    Text(subtitle)
+                        .font(Theme.caption(12))
+                        .foregroundStyle(.white)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer(minLength: 8)
+
+                if unlocked {
+                    Capsule()
+                        .fill(Theme.night)
+                        .frame(width: 44, height: 26)
+                        .overlay(alignment: isOn ? .trailing : .leading) {
+                            Circle()
+                                .fill(isOn ? Theme.amber : Color.white.opacity(0.5))
+                                .frame(width: 20, height: 20)
+                                .padding(3)
+                        }
+                        .overlay(Capsule().strokeBorder(skin.outline, lineWidth: 2))
+                        .accessibilityHidden(true)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                        .accessibilityHidden(true)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // L'ombre porte le fond seul, jamais le contenu : une ombre à
+            // rayon nul poserait sinon une seconde copie du texte 5 pt plus bas.
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Theme.rose)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(skin.outline, lineWidth: Theme.stroke)
+                    )
+                    .shadow(color: skin.outline, radius: 0, y: Theme.drop)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressedStyle())
+        .padding(.bottom, Theme.drop)
+        .animation(.easeOut(duration: 0.15), value: isOn)
+        .accessibilityLabel(unlocked ? title : "Débloquer : \(title), réservé aux adultes")
+        .accessibilityValue(unlocked ? (isOn ? "activé" : "désactivé") : "verrouillé")
+        .accessibilityAddTraits(unlocked && isOn ? AccessibilityTraits.isSelected : [])
+        .accessibilityHint(subtitle)
+    }
+}
+
 // MARK: - Badge de rôle
 
 /// Révélation du rôle d'un joueur : autocollant plein, texte encre.
