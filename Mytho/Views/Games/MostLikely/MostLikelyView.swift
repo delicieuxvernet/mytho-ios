@@ -90,7 +90,7 @@ struct MostLikelyView: View {
                 VStack(spacing: 14) {
                     setupHeader
                     packsPanel
-                    detraqueBanner
+                    soireeBanner
                     roundsPanel
                     countingPanel
                     if !hasEnoughPlayers { notEnoughPlayersNotice }
@@ -150,10 +150,10 @@ struct MostLikelyView: View {
             VStack(alignment: .leading, spacing: 12) {
                 panelTitle("Paquets", symbol: "rectangle.stack.fill")
 
-                // Les paquets tout public seulement : le Détraqué vit dans son
-                // bandeau rose sous le panneau, il ne se fond jamais ici.
+                // Les paquets tout public seulement : le « Soirée » 18+ vit
+                // dans son bandeau rose sous le panneau, jamais dans la liste.
                 ForEach(MostLikelyPack.available(unlockedExtras: settings.adultContentUnlocked)
-                    .filter { $0 != .detraque }) { pack in
+                    .filter { !$0.isLocked }) { pack in
                     OptionToggle(
                         title: "\(pack.name) · \(pack.cards.count) cartes",
                         subtitle: pack.subtitle,
@@ -166,18 +166,18 @@ struct MostLikelyView: View {
 
     /// Le paquet 18+ en bandeau : l'argument de vente de l'app, sous les
     /// paquets. Même porte que « Je n'ai jamais » : l'âge se confirme.
-    private var detraqueBanner: some View {
+    private var soireeBanner: some View {
         AdultPackBanner(
-            title: "Paquet Détraqué · 18+",
-            subtitle: "40 cartes de fou furieux : garde à vue, sextos, zéro regret.",
+            title: "Paquet Soirée · 18+",
+            subtitle: "30 cartes : sextos, exs et lendemains qui piquent.",
             unlocked: settings.adultContentUnlocked,
-            isOn: packBinding(.detraque),
+            isOn: packBinding(.soiree),
             onUnlock: { showAgeGate = true }
         )
         .alert("Réservé aux adultes", isPresented: $showAgeGate) {
             Button("J'ai 18 ans ou plus") {
                 if settings.setAdultContent(true, ageConfirmed: true) {
-                    options.packs.insert(.detraque)
+                    options.packs.insert(.soiree)
                 }
             }
             Button("Annuler", role: .cancel) {}

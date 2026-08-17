@@ -361,14 +361,14 @@ final class MostLikelyTests: XCTestCase {
 
     // MARK: - Pioche et carte
 
-    /// Le paquet fait 200 cartes : une partie de vingt manches ne doit jamais en
-    /// remontrer une (spec §8).
+    /// Le paquet ouvert fait 30 cartes, la mémoire de pioche en couvre 70 % :
+    /// vingt-et-un tirages d'affilée ne remontrent jamais la même (spec §8).
     func testACardNeverComesBackWithinAGame() throws {
         let players = table(4)
         var engine = try XCTUnwrap(makeEngine(players, options: options(limit: .endless)))
 
         var seen: [String] = [engine.card.id]
-        for _ in 0..<25 {
+        for _ in 0..<20 {
             playQuickRound(&engine, designating: players[0].id)
             engine.nextRound()
             seen.append(engine.card.id)
@@ -467,16 +467,14 @@ final class MostLikelyTests: XCTestCase {
     // MARK: - Contenu (spec §3.5)
 
     func testPackVolumesMatchTheSpec() {
-        XCTAssertEqual(MostLikelyPack.soiree.cards.count, 120)
-        XCTAssertEqual(MostLikelyPack.potes.cards.count, 80)
-        XCTAssertEqual(MostLikelyPack.epice.cards.count, 60)
-        XCTAssertEqual(MostLikelyPack.detraque.cards.count, 40)
+        XCTAssertEqual(MostLikelyPack.potes.cards.count, 30)
+        XCTAssertEqual(MostLikelyPack.soiree.cards.count, 30)
         XCTAssertEqual(
             MostLikelyBank.cards(for: MostLikelyPack.defaultSelection).count,
-            200,
-            "Les deux paquets ouverts font les 200 cartes annoncées"
+            30,
+            "Le paquet ouvert fait les 30 cartes annoncées"
         )
-        XCTAssertEqual(MostLikelyBank.all.count, 300)
+        XCTAssertEqual(MostLikelyBank.all.count, 60)
     }
 
     func testNoCardIsEmptyOrDuplicated() {
@@ -527,20 +525,20 @@ final class MostLikelyTests: XCTestCase {
         }
     }
 
-    /// Les trois paquets sont tout public : aucun ne doit rester derrière le
-    /// réglage de contenu adulte, sinon 60 cartes ne sortent jamais.
+    /// « Entre potes » est tout public ; « Soirée » vit derrière la porte
+    /// d'âge et n'apparaît jamais tant qu'elle n'est pas passée.
     func testOnlyTheAdultPackHidesBehindTheAgeGate() {
-        XCTAssertTrue(MostLikelyPack.available(unlockedExtras: false).contains(.epice))
-        XCTAssertFalse(MostLikelyPack.available(unlockedExtras: false).contains(.detraque),
+        XCTAssertTrue(MostLikelyPack.available(unlockedExtras: false).contains(.potes))
+        XCTAssertFalse(MostLikelyPack.available(unlockedExtras: false).contains(.soiree),
                        "Le 18+ reste invisible tant que l'âge n'est pas confirmé")
-        XCTAssertTrue(MostLikelyPack.available(unlockedExtras: true).contains(.detraque))
-        XCTAssertFalse(MostLikelyPack.defaultSelection.contains(.detraque), "Jamais coché d'office")
+        XCTAssertTrue(MostLikelyPack.available(unlockedExtras: true).contains(.soiree))
+        XCTAssertFalse(MostLikelyPack.defaultSelection.contains(.soiree), "Jamais coché d'office")
     }
 
     /// Un réglage sauvegardé qui ne pointe plus sur rien ne doit pas rendre une
     /// partie injouable.
     func testAnEmptySelectionFallsBackOnTheBasePack() {
-        XCTAssertEqual(MostLikelyBank.cards(for: []).count, MostLikelyPack.soiree.cards.count)
+        XCTAssertEqual(MostLikelyBank.cards(for: []).count, MostLikelyPack.potes.cards.count)
     }
 
     func testTheDeckIdMatchesTheRegistryEntry() {

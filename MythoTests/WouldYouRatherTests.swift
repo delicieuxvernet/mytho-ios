@@ -527,8 +527,8 @@ final class WouldYouRatherTests: XCTestCase {
 
     // MARK: - Intégrité du contenu
 
-    func testTheDeckHoldsTwoHundredDilemmas() {
-        XCTAssertEqual(WouldYouRatherBank.all.count, 200)
+    func testTheDeckHoldsTheFiftyBaseDilemmas() {
+        XCTAssertEqual(WouldYouRatherBank.all.count, 50)
     }
 
     func testEveryIdentifierIsUniqueAndWellFormed() {
@@ -615,19 +615,19 @@ final class WouldYouRatherTests: XCTestCase {
 
     // MARK: - Pack Extrême (18+)
 
-    /// Le paquet de base reste à 200 : l'Extrême s'ajoute, il ne remplace pas.
+    /// Le paquet de base reste à 50 : l'Extrême s'ajoute, il ne remplace pas.
     func testTheExtremePackStaysBehindTheAgeGate() {
-        XCTAssertEqual(WouldYouRatherBank.all.count, 200)
-        XCTAssertEqual(WouldYouRatherBank.extreme.count, 60)
+        XCTAssertEqual(WouldYouRatherBank.all.count, 50)
+        XCTAssertEqual(WouldYouRatherBank.extreme.count, 40)
 
-        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: false, extremeEnabled: true).count, 200,
+        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: false, extremeEnabled: true).count, 50,
                        "Sans confirmation d'âge, l'interrupteur seul ne suffit pas")
-        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: false).count, 200,
+        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: false).count, 50,
                        "L'âge confirmé n'active rien tant que la table n'a pas choisi")
-        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: true).count, 260)
+        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: true).count, 90)
 
         let ids = Set(WouldYouRatherBank.extreme.map(\.id))
-        XCTAssertEqual(ids.count, 60, "Identifiants uniques")
+        XCTAssertEqual(ids.count, 40, "Identifiants uniques")
         XCTAssertTrue(WouldYouRatherBank.extreme.allSatisfy { $0.a.count <= 60 && $0.b.count <= 60 })
     }
 }
