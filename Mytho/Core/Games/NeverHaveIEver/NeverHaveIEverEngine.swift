@@ -66,9 +66,10 @@ struct NeverHaveIEverEngine {
         init(
             startingLives: Int = NeverHaveIEverEngine.defaultLives,
             mode: ConfessionMode = .honour,
-            // Sans élimination par défaut (choix produit du 17 août) : personne
-            // ne sort, les grands groupes restent à table jusqu'au classement.
-            eliminates: Bool = false,
+            // Défaut neutre du moteur. Le choix produit « sans élimination
+            // d'office » (17 août) vit dans l'écran de réglages, pas ici : les
+            // tests d'élimination construisent leurs parties avec ce défaut.
+            eliminates: Bool = true,
             cardLimit: Int? = NeverHaveIEverEngine.defaultCardLimit
         ) {
             // Une partie à zéro vie se terminerait sur la première carte.

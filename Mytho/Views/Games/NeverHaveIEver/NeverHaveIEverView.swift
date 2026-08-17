@@ -27,7 +27,9 @@ struct NeverHaveIEverView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var engine: NeverHaveIEverEngine?
-    @State private var rules = NeverHaveIEverEngine.Rules()
+    // Sans élimination d'office (choix produit du 17 août) : personne ne sort,
+    // les grands groupes restent à table. L'interrupteur reste à un geste.
+    @State private var rules = NeverHaveIEverEngine.Rules(eliminates: false)
     // Aucun paquet pré-coché (choix produit du 17 août) : la table choisit,
     // et le bandeau Épicé se présente à égalité de geste avec le reste.
     @State private var packIDs: Set<String> = []
