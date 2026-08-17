@@ -50,7 +50,10 @@ targets:
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: D87R3L7B75
         CURRENT_PROJECT_VERSION: 1
-        MARKETING_VERSION: "1.0.0"
+        # La 1.0.0 est publiée : Apple clôt son « train » et refuse tout
+        # nouveau build à ce numéro. Chaque release App Store impose donc de
+        # bumper ici avant le push suivant.
+        MARKETING_VERSION: "1.1.0"
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
