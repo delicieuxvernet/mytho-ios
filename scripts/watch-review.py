@@ -1,10 +1,13 @@
 # Etat de la review App Store, en une ligne.
-#   python scripts/watch-review.py
+#   python scripts/watch-review.py        -> ligne stable, pour la surveillance
+#   python scripts/watch-review.py --fr   -> une phrase, pour un humain
 #
-# Sert a la surveillance en boucle : la sortie est stable et comparable d'un
-# appel a l'autre, donc un changement de ligne = un changement d'etat reel.
+# Sert a la surveillance en boucle : la sortie par defaut est stable et
+# comparable d'un appel a l'autre, donc un changement de ligne = un changement
+# d'etat reel. Ne jamais la reformater.
 import json
 import os
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -56,7 +59,30 @@ def main() -> None:
     if state in {"REJECTED", "DEVELOPER_REJECTED", "METADATA_REJECTED"}:
         rejection = " | REFUS : consulter App Store Connect > Centre de messages"
 
-    print(f"{number} | version={state} | soumission={sub_state}{rejection}")
+    if "--fr" not in sys.argv:
+        # Sortie stable, comparable d'un appel a l'autre : c'est elle que la
+        # surveillance automatique lit. Ne pas la reformater.
+        print(f"{number} | version={state} | soumission={sub_state}{rejection}")
+        return
+
+    # Sortie pour un humain : « ou en est mon app, en une phrase ».
+    build = get(f"/v1/appStoreVersions/{versions['data'][0]['id']}/build", bearer)
+    numero = (build.get("data") or {}).get("attributes", {}).get("version", "?")
+    phrases = {
+        "PREPARE_FOR_SUBMISSION": "prete, mais PAS encore envoyee a Apple",
+        "WAITING_FOR_REVIEW": "dans la file d'attente d'Apple (24-48 h en general)",
+        "IN_REVIEW": "en cours d'examen par Apple, en ce moment meme",
+        "PENDING_DEVELOPER_RELEASE": "ACCEPTEE — il ne reste qu'a appuyer sur publier",
+        "READY_FOR_SALE": "EN LIGNE sur l'App Store",
+        "PROCESSING_FOR_APP_STORE": "acceptee, Apple prepare la mise en ligne",
+        "REJECTED": "REFUSEE par Apple — le motif est dans le centre de messages",
+        "METADATA_REJECTED": "REFUSEE sur la fiche (textes ou captures)",
+        "DEVELOPER_REJECTED": "retiree de la file par nous",
+        "INVALID_BINARY": "build refuse techniquement par Apple",
+    }
+    print(f"Version {number} (build #{numero}) : {phrases.get(state, state)}.")
+    if state in {"WAITING_FOR_REVIEW", "IN_REVIEW"}:
+        print("Rien a faire : la publication se declenchera toute seule si Apple accepte.")
 
 
 if __name__ == "__main__":
