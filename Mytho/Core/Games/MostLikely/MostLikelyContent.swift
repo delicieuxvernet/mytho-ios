@@ -81,9 +81,14 @@ enum MostLikelyBank {
     /// Les cartes des paquets choisis. Un réglage sauvegardé qui ne pointe plus
     /// sur rien retombe sur le paquet de base plutôt que de rendre une partie
     /// injouable.
-    static func cards(for packs: Set<MostLikelyPack>) -> [MostLikelyCard] {
+    ///
+    /// Le verrou 18+ s'applique **ici** et pas seulement dans la vue : une table
+    /// qui a coché « Soirée » puis refermé le contenu adulte dans les réglages
+    /// ne doit plus en voir une seule carte. Le défaut est le verrou fermé —
+    /// un appelant qui oublie l'argument obtient le paquet tout public.
+    static func cards(for packs: Set<MostLikelyPack>, adultUnlocked: Bool = false) -> [MostLikelyCard] {
         let selected = MostLikelyPack.allCases
-            .filter { packs.contains($0) }
+            .filter { packs.contains($0) && (!$0.isLocked || adultUnlocked) }
             .flatMap(\.cards)
         return selected.isEmpty ? potesCards : selected
     }

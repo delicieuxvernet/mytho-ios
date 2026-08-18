@@ -122,6 +122,10 @@ struct MostLikelyEngine {
         var limit: RoundLimit = .twelve
         var counting: Counting = .quick
         var packs: Set<MostLikelyPack> = MostLikelyPack.defaultSelection
+        /// L'état de la confirmation d'âge au moment du lancement. Faux par
+        /// défaut : un paquet 18+ coché ne sort aucune carte tant que l'écran
+        /// n'a pas transmis le déverrouillage.
+        var adultUnlocked = false
     }
 
     // MARK: Résultat d'une manche
@@ -197,7 +201,7 @@ struct MostLikelyEngine {
 
         var deck = Deck<MostLikelyCard>(
             id: Self.gameID,
-            items: MostLikelyBank.cards(for: options.packs),
+            items: MostLikelyBank.cards(for: options.packs, adultUnlocked: options.adultUnlocked),
             store: store
         )
         guard let first = deck.draw(using: &generator) else { return nil }

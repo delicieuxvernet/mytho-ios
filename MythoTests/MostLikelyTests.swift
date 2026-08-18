@@ -541,6 +541,46 @@ final class MostLikelyTests: XCTestCase {
         XCTAssertEqual(MostLikelyBank.cards(for: []).count, MostLikelyPack.potes.cards.count)
     }
 
+    /// Le verrou 18+ vit dans la banque, pas seulement dans l'écran : cocher
+    /// « Soirée » puis refermer le contenu adulte dans les réglages ne doit plus
+    /// sortir une seule carte du paquet. Sans cette garde, le chemin
+    /// confirmer l'âge → cocher → refermer → lancer les servait quand même.
+    func testTheAdultPackNeverLeaksOnceTheAgeGateIsClosedAgain() {
+        let tout: Set<MostLikelyPack> = [.potes, .soiree]
+
+        XCTAssertEqual(
+            MostLikelyBank.cards(for: tout, adultUnlocked: false).count,
+            MostLikelyPack.potes.cards.count,
+            "Verrou fermé : le paquet 18+ ne fournit aucune carte"
+        )
+        XCTAssertEqual(
+            MostLikelyBank.cards(for: tout, adultUnlocked: true).count,
+            MostLikelyPack.potes.cards.count + MostLikelyPack.soiree.cards.count
+        )
+        XCTAssertEqual(
+            MostLikelyBank.cards(for: [.soiree], adultUnlocked: false).count,
+            MostLikelyPack.potes.cards.count,
+            "Le 18+ seul et verrouillé retombe sur le paquet tout public"
+        )
+
+        // Et jusque dans le moteur : une partie lancée verrou fermé ne pioche
+        // que du tout public, même si la sélection porte les deux paquets.
+        let publiques = Set(MostLikelyPack.potes.cards.map(\.id))
+        var reglages = options(limit: .endless)
+        reglages.packs = tout
+        reglages.adultUnlocked = false
+
+        let players = table(4)
+        guard var engine = makeEngine(players, options: reglages) else {
+            return XCTFail("Le moteur doit se lancer")
+        }
+        for _ in 0..<30 {
+            XCTAssertTrue(publiques.contains(engine.card.id), "\(engine.card.id) a fui le verrou 18+")
+            playQuickRound(&engine, designating: players[0].id)
+            engine.nextRound()
+        }
+    }
+
     func testTheDeckIdMatchesTheRegistryEntry() {
         XCTAssertTrue(
             GameRegistry.all.contains { $0.id == MostLikelyEngine.gameID },

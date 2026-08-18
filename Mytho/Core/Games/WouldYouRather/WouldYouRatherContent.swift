@@ -26,12 +26,12 @@ struct Dilemma: Identifiable, Hashable, Sendable {
 ///
 /// **Règles d'écriture appliquées** (spec §8) : une carte = une idée, tutoiement
 /// systématique, aucune référence datée, aucune personne réelle, rien qui vise
-/// une caractéristique protégée. L'app est classée 4+ : aucune mention d'alcool,
-/// de tabac, de drogue, de sexe ni de violence, dans aucune carte.
+/// une caractéristique protégée. L'app est classée 17+ : le paquet de base
+/// assume le trash corporel mais reste jouable sans la confirmation d'âge —
+/// ni sexe, ni alcool, ni drogue — et tout le cru vit dans l'Extrême.
 ///
-/// Pas de packs ici, contrairement au « plus susceptible de » (§3.5) et à « je
-/// n'ai jamais » (§5.5) : la spec n'en prévoit pas pour ce jeu, et un paquet
-/// unique de 200 tient déjà treize soirées sans répétition.
+/// Deux paquets, comme les deux autres jeux de cartes : le verrou d'âge se
+/// vérifie dans `dilemmas(adultUnlocked:extremeEnabled:)`, jamais dans la vue.
 enum WouldYouRatherBank {
 
     /// Le paquet complet, dans l'ordre des identifiants.
@@ -84,7 +84,7 @@ enum WouldYouRatherBank {
         Dilemma(id: "wyr_029", a: "Des poils pubiens à la place des dents", b: "Des dents à la place des poils pubiens"),
         Dilemma(id: "wyr_030", a: "Un pénis de la taille d'un téton", b: "Des tétons de la taille d'un pénis"),
         Dilemma(id: "wyr_031", a: "Qu'on entende tes pensées pendant l'amour", b: "Entendre celles de l'autre sans pouvoir répondre"),
-        Dilemma(id: "wyr_032", a: "Un an d'abstinence totale", b: "Une nuit avec quelqu'un d'ici, tiré au sort"),
+        Dilemma(id: "wyr_032", a: "Un an d'abstinence totale", b: "Une nuit avec quelqu'un d'ici, s'il est d'accord"),
         Dilemma(id: "wyr_033", a: "Gémir à chaque éternuement", b: "Éternuer à chaque moment intime"),
         Dilemma(id: "wyr_034", a: "Ton plan d'hier devient ton boss lundi", b: "Le rencard de ta mère samedi"),
         Dilemma(id: "wyr_035", a: "Finir tous les fonds de verre de la soirée", b: "Lécher le comptoir du bar en entier"),
@@ -94,8 +94,8 @@ enum WouldYouRatherBank {
         Dilemma(id: "wyr_039", a: "Pleurer bruyamment à chaque orgasme", b: "Rire aux éclats à chaque enterrement"),
         Dilemma(id: "wyr_040", a: "Une seule fois par an, mais parfaite", b: "Tous les jours, toujours moyen"),
         Dilemma(id: "wyr_041", a: "Que ça dure 30 secondes à vie", b: "Que ça dure 3 heures obligatoires"),
-        Dilemma(id: "wyr_042", a: "Faire l'amour devant tes beaux-parents une fois", b: "Les entendre à chaque fois"),
-        Dilemma(id: "wyr_043", a: "Refaire ta première fois devant témoins", b: "La raconter en détail à ta famille"),
+        Dilemma(id: "wyr_042", a: "Que tes beaux-parents t'entendent une seule fois", b: "Les entendre à chaque fois"),
+        Dilemma(id: "wyr_043", a: "Refaire ta pire nuit devant témoins", b: "La raconter en détail à toute la table"),
         Dilemma(id: "wyr_044", a: "Roter au premier baiser", b: "Éternuer dans le cou à chaque câlin"),
         Dilemma(id: "wyr_045", a: "Péter pendant un massage en couple", b: "Pendant une demande en mariage"),
         Dilemma(id: "wyr_046", a: "Faire ça dans le lit de tes parents", b: "Que tes parents le fassent dans le tien"),

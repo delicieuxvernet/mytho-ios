@@ -794,8 +794,17 @@ struct MostLikelyView: View {
         guard hasEnoughPlayers else { return }
         roster.beginRound()
         resetRoundState()
-        engine = MostLikelyEngine(players: roster.participants, options: options)
+        engine = MostLikelyEngine(players: roster.participants, options: launchOptions)
         haptics { Haptics.prepare() }
+    }
+
+    /// Les réglages tels qu'ils partent au moteur : l'état du verrou 18+ est lu
+    /// au lancement, pas au moment où la case a été cochée. Une table qui
+    /// referme le contenu adulte entre deux parties ne revoit aucune carte.
+    private var launchOptions: MostLikelyEngine.Options {
+        var opts = options
+        opts.adultUnlocked = settings.adultContentUnlocked
+        return opts
     }
 
     private func replay() {
@@ -805,7 +814,7 @@ struct MostLikelyView: View {
         roster.beginRound()
         // Les points de la soirée se reprennent : « Rejouer » relance des cartes,
         // pas une nouvelle table.
-        engine = MostLikelyEngine(players: roster.participants, options: options, scores: carried)
+        engine = MostLikelyEngine(players: roster.participants, options: launchOptions, scores: carried)
     }
 
     /// Sortie du jeu. Referme la fenêtre de manche : hors manche, retirer un

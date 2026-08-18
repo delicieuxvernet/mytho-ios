@@ -93,7 +93,9 @@ enum NeverHaveIEverBank {
     // MARK: - Pack « Entre potes »
 
     /// Gênant plutôt que sage : petits mensonges sociaux, mauvaise foi,
-    /// habitudes de téléphone. Toujours tout public — l'app est classée 4+.
+    /// habitudes de téléphone. Trash corporel assumé, mais jouable sans la
+    /// confirmation d'âge : ni sexe, ni alcool, ni drogue (l'app est en 17+,
+    /// c'est la porte d'âge interne qui sépare les deux étages).
     private static let potesCards: [ConfessionCard] = [
         card(1, "mangé mes crottes de nez"),
         card(2, "pété au lit avec quelqu'un et fait semblant de rien"),
