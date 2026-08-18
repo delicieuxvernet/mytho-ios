@@ -131,7 +131,7 @@ enum NeverHaveIEverBank {
     private static let epiceCards: [ConfessionCard] = [
         card(21, "fantasmé sur quelqu'un dans cette pièce"),
         card(22, "regardé du porno pendant que quelqu'un dormait à côté"),
-        card(23, "eu un orgasme en pensant à quelqu'un de totalement interdit"),
+        card(23, "eu un orgasme en pensant au frère ou à la sœur d'un pote"),
         card(24, "envoyé une photo de mes parties intimes par erreur"),
         card(25, "vomi sur quelqu'un"),
         card(26, "pensé à quelqu'un de cette table en me touchant"),
