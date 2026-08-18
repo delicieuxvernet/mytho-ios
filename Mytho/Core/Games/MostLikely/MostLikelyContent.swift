@@ -22,9 +22,9 @@ struct MostLikelyCard: Identifiable, Hashable, Sendable {
 /// que des essentielles. Le contenu se stocke en Swift et pas en JSON
 /// (spec §1.2) : vérifié à la compilation, relisible en diff de PR.
 enum MostLikelyPack: String, CaseIterable, Identifiable, Sendable {
-    /// 30 cartes tout public : les hontes du quotidien, désignées au doigt.
+    /// 20 cartes tout public : les hontes physiques qu'on nie en public.
     case potes
-    /// 30 cartes 18+ : la soirée qui dérape, assumée.
+    /// 25 cartes 18+ : la soirée qui dérape, assumée.
     case soiree
 
     var id: String { rawValue }
@@ -38,7 +38,7 @@ enum MostLikelyPack: String, CaseIterable, Identifiable, Sendable {
 
     var subtitle: String {
         switch self {
-        case .potes: return "Les hontes du quotidien, désignées au doigt."
+        case .potes: return "Les hontes physiques qu'on nie en public."
         case .soiree: return "Interdit aux mineurs. La soirée qui dérape, assumée."
         }
     }
@@ -91,70 +91,55 @@ enum MostLikelyBank {
     // MARK: - Entre potes
 
     static let potesCards: [MostLikelyCard] = [
-        MostLikelyCard(id: "mst_001", text: "oublier son propre anniversaire"),
-        MostLikelyCard(id: "mst_002", text: "arriver en retard à son mariage"),
-        MostLikelyCard(id: "mst_003", text: "faire un signe à quelqu'un qui saluait la personne derrière"),
-        MostLikelyCard(id: "mst_004", text: "répondre « toi aussi » au serveur"),
-        MostLikelyCard(id: "mst_005", text: "reposer discrètement l'objet qu'il vient de casser"),
-        MostLikelyCard(id: "mst_006", text: "garder un yaourt périmé depuis six mois"),
-        MostLikelyCard(id: "mst_007", text: "faire rire toute une salle par accident"),
-        MostLikelyCard(id: "mst_008", text: "raconter la même histoire deux fois à la même personne"),
-        MostLikelyCard(id: "mst_009", text: "regarder la suite de la série en douce sans l'avouer"),
-        MostLikelyCard(id: "mst_010", text: "relancer la même série pour la huitième fois"),
-        MostLikelyCard(id: "mst_011", text: "répondre à un message six jours plus tard"),
-        MostLikelyCard(id: "mst_012", text: "envoyer « il est relou » à la personne concernée"),
-        MostLikelyCard(id: "mst_013", text: "laisser un vocal de huit minutes sans aucune information"),
-        MostLikelyCard(id: "mst_014", text: "laisser cent onglets ouverts"),
-        MostLikelyCard(id: "mst_015", text: "réinitialiser son mot de passe à chaque connexion"),
-        MostLikelyCard(id: "mst_016", text: "avoir toujours trois pour cent de batterie"),
-        MostLikelyCard(id: "mst_017", text: "chercher son téléphone avec la lampe torche du téléphone"),
-        MostLikelyCard(id: "mst_018", text: "régler douze réveils et tous les ignorer"),
-        MostLikelyCard(id: "mst_019", text: "mettre « vu » et répondre dans sa tête"),
-        MostLikelyCard(id: "mst_020", text: "se tromper de prénom en pleine phrase"),
-        MostLikelyCard(id: "mst_021", text: "raconter un secret « à une seule personne » — puis à cinq"),
-        MostLikelyCard(id: "mst_022", text: "se perdre avec le GPS allumé"),
-        MostLikelyCard(id: "mst_023", text: "googler ses symptômes et se croire condamné"),
-        MostLikelyCard(id: "mst_024", text: "pleurer devant une pub"),
-        MostLikelyCard(id: "mst_025", text: "chanter faux avec une confiance totale"),
-        MostLikelyCard(id: "mst_026", text: "parler à son animal comme à un humain"),
-        MostLikelyCard(id: "mst_027", text: "supprimer une story dix minutes après"),
-        MostLikelyCard(id: "mst_028", text: "s'inventer une vie devant le coiffeur"),
-        MostLikelyCard(id: "mst_029", text: "mentir sur son temps d'écran"),
-        MostLikelyCard(id: "mst_030", text: "finir une série en une nuit et le regretter à l'aube")
+        MostLikelyCard(id: "mst_001", text: "se gratter l'entrejambe ou les fesses en public"),
+        MostLikelyCard(id: "mst_002", text: "péter très fort en pleine conversation"),
+        MostLikelyCard(id: "mst_003", text: "avoir déjà chié dans son pantalon en soirée"),
+        MostLikelyCard(id: "mst_004", text: "avoir déjà pissé dans la douche de quelqu'un d'autre"),
+        MostLikelyCard(id: "mst_005", text: "manger un truc immonde pour 10 euros"),
+        MostLikelyCard(id: "mst_006", text: "renifler ses vêtements pour décider de les remettre"),
+        MostLikelyCard(id: "mst_007", text: "se curer le nez au feu rouge en se croyant invisible"),
+        MostLikelyCard(id: "mst_008", text: "péter dans l'ascenseur et accuser quelqu'un d'autre"),
+        MostLikelyCard(id: "mst_009", text: "se gratter puis renifler ses doigts"),
+        MostLikelyCard(id: "mst_010", text: "tirer la chasse avec le pied dans les toilettes publiques"),
+        MostLikelyCard(id: "mst_011", text: "manger un truc tombé bien au-delà des cinq secondes"),
+        MostLikelyCard(id: "mst_012", text: "roter l'alphabet sur demande"),
+        MostLikelyCard(id: "mst_013", text: "garder le même caleçon deux jours « par logistique »"),
+        MostLikelyCard(id: "mst_014", text: "faire semblant de se laver les mains quand il y a du monde"),
+        MostLikelyCard(id: "mst_015", text: "boucher les toilettes d'une soirée et partir sans rien dire"),
+        MostLikelyCard(id: "mst_016", text: "vomir et reprendre la soirée comme si de rien n'était"),
+        MostLikelyCard(id: "mst_017", text: "se moucher dans son tee-shirt en festival"),
+        MostLikelyCard(id: "mst_018", text: "avoir une odeur de pieds qui arrive avant lui"),
+        MostLikelyCard(id: "mst_019", text: "lécher son assiette au restaurant"),
+        MostLikelyCard(id: "mst_020", text: "uriner dans une bouteille en covoiturage")
     ]
 
     // MARK: - Soirée (18+)
 
     static let soireeCards: [MostLikelyCard] = [
-        MostLikelyCard(id: "mst_031", text: "coucher avec l'ex de quelqu'un de cette table"),
-        MostLikelyCard(id: "mst_032", text: "finir dans le lit de quelqu'un de cette pièce ce soir"),
-        MostLikelyCard(id: "mst_033", text: "envoyer un sexto pendant ce jeu"),
-        MostLikelyCard(id: "mst_034", text: "avoir déjà simulé — et le nier maintenant"),
-        MostLikelyCard(id: "mst_035", text: "draguer le serveur ou la serveuse devant tout le monde"),
-        MostLikelyCard(id: "mst_036", text: "repartir avec quelqu'un ce soir"),
-        MostLikelyCard(id: "mst_037", text: "avoir un plan cul régulier depuis des années"),
-        MostLikelyCard(id: "mst_038", text: "avoir un contact enregistré sous un faux nom"),
-        MostLikelyCard(id: "mst_039", text: "répondre à un « tu dors ? » ce soir même"),
-        MostLikelyCard(id: "mst_040", text: "connaître son nombre exact — et mentir dessus"),
-        MostLikelyCard(id: "mst_041", text: "avoir une sextape quelque part"),
-        MostLikelyCard(id: "mst_042", text: "coucher le premier soir sans aucun regret"),
-        MostLikelyCard(id: "mst_043", text: "embrasser quelqu'un ici si un gage le demandait"),
-        MostLikelyCard(id: "mst_044", text: "finir bourré au mariage de quelqu'un d'autre"),
-        MostLikelyCard(id: "mst_045", text: "pleurer bourré sur un ex"),
-        MostLikelyCard(id: "mst_046", text: "appeler son ex après deux verres"),
-        MostLikelyCard(id: "mst_047", text: "finir la soirée torse nu"),
-        MostLikelyCard(id: "mst_048", text: "se réveiller avec un tatouage surprise"),
-        MostLikelyCard(id: "mst_049", text: "se réveiller dans la mauvaise ville"),
-        MostLikelyCard(id: "mst_050", text: "finir en garde à vue un soir de fête"),
-        MostLikelyCard(id: "mst_051", text: "se gratter l'entrejambe ou les fesses en public"),
-        MostLikelyCard(id: "mst_052", text: "péter très fort en pleine conversation"),
-        MostLikelyCard(id: "mst_053", text: "avoir déjà chié dans son pantalon en soirée"),
-        MostLikelyCard(id: "mst_054", text: "se faire attraper en train de se toucher aux toilettes"),
-        MostLikelyCard(id: "mst_055", text: "avoir un historique porno à nettoyer en panique"),
-        MostLikelyCard(id: "mst_056", text: "vomir dans un taxi et laisser 2 euros de pourboire"),
-        MostLikelyCard(id: "mst_057", text: "dormir nu et se réveiller dans un lit inconnu"),
-        MostLikelyCard(id: "mst_058", text: "avoir déjà pissé dans la douche de quelqu'un d'autre"),
-        MostLikelyCard(id: "mst_059", text: "se faire surprendre en train de se branler ou se doigter"),
-        MostLikelyCard(id: "mst_060", text: "manger un truc immonde pour 10 euros")
+        MostLikelyCard(id: "mst_021", text: "coucher avec l'ex de quelqu'un de cette table"),
+        MostLikelyCard(id: "mst_022", text: "finir dans le lit de quelqu'un de cette pièce ce soir"),
+        MostLikelyCard(id: "mst_023", text: "envoyer un sexto pendant ce jeu"),
+        MostLikelyCard(id: "mst_024", text: "avoir déjà simulé — et le nier maintenant"),
+        MostLikelyCard(id: "mst_025", text: "draguer le serveur ou la serveuse devant tout le monde"),
+        MostLikelyCard(id: "mst_026", text: "repartir avec quelqu'un ce soir"),
+        MostLikelyCard(id: "mst_027", text: "avoir un plan cul régulier depuis des années"),
+        MostLikelyCard(id: "mst_028", text: "avoir un contact enregistré sous un faux nom"),
+        MostLikelyCard(id: "mst_029", text: "répondre à un « tu dors ? » ce soir même"),
+        MostLikelyCard(id: "mst_030", text: "connaître son nombre exact — et mentir dessus"),
+        MostLikelyCard(id: "mst_031", text: "avoir une sextape quelque part"),
+        MostLikelyCard(id: "mst_032", text: "coucher le premier soir sans aucun regret"),
+        MostLikelyCard(id: "mst_033", text: "embrasser quelqu'un ici si un gage le demandait"),
+        MostLikelyCard(id: "mst_034", text: "finir bourré au mariage de quelqu'un d'autre"),
+        MostLikelyCard(id: "mst_035", text: "pleurer bourré sur un ex"),
+        MostLikelyCard(id: "mst_036", text: "appeler son ex après deux verres"),
+        MostLikelyCard(id: "mst_037", text: "finir la soirée torse nu"),
+        MostLikelyCard(id: "mst_038", text: "se réveiller avec un tatouage surprise"),
+        MostLikelyCard(id: "mst_039", text: "se réveiller dans la mauvaise ville"),
+        MostLikelyCard(id: "mst_040", text: "finir en garde à vue un soir de fête"),
+        MostLikelyCard(id: "mst_041", text: "se faire attraper en train de se toucher aux toilettes"),
+        MostLikelyCard(id: "mst_042", text: "avoir un historique porno à nettoyer en panique"),
+        MostLikelyCard(id: "mst_043", text: "vomir dans un taxi et laisser 2 euros de pourboire"),
+        MostLikelyCard(id: "mst_044", text: "dormir nu et se réveiller dans un lit inconnu"),
+        MostLikelyCard(id: "mst_045", text: "se faire surprendre en train de se branler ou se doigter")
     ]
 }

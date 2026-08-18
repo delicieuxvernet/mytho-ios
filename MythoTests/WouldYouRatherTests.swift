@@ -527,8 +527,8 @@ final class WouldYouRatherTests: XCTestCase {
 
     // MARK: - Intégrité du contenu
 
-    func testTheDeckHoldsTheFiftyBaseDilemmas() {
-        XCTAssertEqual(WouldYouRatherBank.all.count, 50)
+    func testTheDeckHoldsTheBaseDilemmas() {
+        XCTAssertEqual(WouldYouRatherBank.all.count, 25)
     }
 
     func testEveryIdentifierIsUniqueAndWellFormed() {
@@ -615,19 +615,19 @@ final class WouldYouRatherTests: XCTestCase {
 
     // MARK: - Pack Extrême (18+)
 
-    /// Le paquet de base reste à 50 : l'Extrême s'ajoute, il ne remplace pas.
+    /// Le paquet de base reste à 25 : l'Extrême s'ajoute, il ne remplace pas.
     func testTheExtremePackStaysBehindTheAgeGate() {
-        XCTAssertEqual(WouldYouRatherBank.all.count, 50)
-        XCTAssertEqual(WouldYouRatherBank.extreme.count, 40)
+        XCTAssertEqual(WouldYouRatherBank.all.count, 25)
+        XCTAssertEqual(WouldYouRatherBank.extreme.count, 25)
 
-        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: false, extremeEnabled: true).count, 50,
+        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: false, extremeEnabled: true).count, 25,
                        "Sans confirmation d'âge, l'interrupteur seul ne suffit pas")
-        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: false).count, 50,
+        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: false).count, 25,
                        "L'âge confirmé n'active rien tant que la table n'a pas choisi")
-        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: true).count, 90)
+        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: true).count, 50)
 
         let ids = Set(WouldYouRatherBank.extreme.map(\.id))
-        XCTAssertEqual(ids.count, 40, "Identifiants uniques")
+        XCTAssertEqual(ids.count, 25, "Identifiants uniques")
         XCTAssertTrue(WouldYouRatherBank.extreme.allSatisfy { $0.a.count <= 60 && $0.b.count <= 60 })
     }
 }

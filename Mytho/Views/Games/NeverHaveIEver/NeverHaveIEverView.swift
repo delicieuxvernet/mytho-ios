@@ -261,7 +261,7 @@ struct NeverHaveIEverView: View {
     private var epiceBanner: some View {
         AdultPackBanner(
             title: "Pack Épicé · 18+",
-            subtitle: "35 cartes crues : sextos, plans d'un soir, lendemains flous.",
+            subtitle: "25 cartes crues : sextos, plans d'un soir, lendemains flous.",
             unlocked: settings.adultContentUnlocked,
             isOn: Binding(
                 get: { packIDs.contains("epice") },

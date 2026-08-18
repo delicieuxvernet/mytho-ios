@@ -114,26 +114,26 @@ def run(which: str) -> bool:
             r'card\((\d+),\s*"((?:[^"\\]|\\.)*)"\)',
         )
         entries = [(f"nhie_{int(n):03d}", t) for n, t in entries]
-        base = [e for e in entries if int(e[0][5:]) <= 40]
-        adult = [e for e in entries if int(e[0][5:]) > 40]
-        ok &= check("Je n'ai jamais (base)", base, 40, max_len=70)
-        ok &= check("Je n'ai jamais (18+)", adult, 35, max_len=70, adult=True)
+        base = [e for e in entries if int(e[0][5:]) <= 20]
+        adult = [e for e in entries if int(e[0][5:]) > 20]
+        ok &= check("Je n'ai jamais (base)", base, 20, max_len=70)
+        ok &= check("Je n'ai jamais (18+)", adult, 25, max_len=70, adult=True)
         ids = [e[0] for e in entries]
-        if ids != [f"nhie_{i:03d}" for i in range(1, 76)]:
-            print("  ECHEC sequence globale nhie_001..75")
+        if ids != [f"nhie_{i:03d}" for i in range(1, 46)]:
+            print("  ECHEC sequence globale nhie_001..45")
             ok = False
     if which in ("ml", "all"):
         entries = load(
             "Mytho/Core/Games/MostLikely/MostLikelyContent.swift",
             r'MostLikelyCard\(id:\s*"(mst_\d+)",\s*text:\s*"((?:[^"\\]|\\.)*)"\)',
         )
-        base = [e for e in entries if int(e[0][4:]) <= 30]
-        adult = [e for e in entries if int(e[0][4:]) > 30]
-        ok &= check("Le plus susceptible (base)", base, 30, max_len=90)
-        ok &= check("Le plus susceptible (18+)", adult, 30, max_len=90, adult=True)
+        base = [e for e in entries if int(e[0][4:]) <= 20]
+        adult = [e for e in entries if int(e[0][4:]) > 20]
+        ok &= check("Le plus susceptible (base)", base, 20, max_len=90)
+        ok &= check("Le plus susceptible (18+)", adult, 25, max_len=90, adult=True)
         ids = [e[0] for e in entries]
-        if ids != [f"mst_{i:03d}" for i in range(1, 61)]:
-            print("  ECHEC sequence globale mst_001..60")
+        if ids != [f"mst_{i:03d}" for i in range(1, 46)]:
+            print("  ECHEC sequence globale mst_001..45")
             ok = False
     if which in ("wyr", "all"):
         src = open(
@@ -146,10 +146,10 @@ def run(which: str) -> bool:
         )
         entries = [(i, f"{a} / {b}") for i, a, b in raw]
         options = [(i, a) for i, a, _ in raw] + [(i, b) for i, _, b in raw]
-        base = [e for e in entries if int(e[0][4:]) <= 50]
-        adult = [e for e in entries if int(e[0][4:]) > 50]
-        ok &= check("Tu préfères (base)", base, 50, "wyr_")
-        ok &= check("Tu préfères (Extrême 18+)", adult, 40, adult=True)
+        base = [e for e in entries if int(e[0][4:]) <= 25]
+        adult = [e for e in entries if int(e[0][4:]) > 25]
+        ok &= check("Tu préfères (base)", base, 25, "wyr_")
+        ok &= check("Tu préfères (Extrême 18+)", adult, 25, adult=True)
         too_long = [(i, len(t)) for i, t in options if len(t) > 60]
         if too_long:
             print(f"  ECHEC options > 60 : {too_long[:4]}")

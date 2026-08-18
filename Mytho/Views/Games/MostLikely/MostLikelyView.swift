@@ -169,7 +169,7 @@ struct MostLikelyView: View {
     private var soireeBanner: some View {
         AdultPackBanner(
             title: "Paquet Soirée · 18+",
-            subtitle: "30 cartes : sextos, exs et lendemains qui piquent.",
+            subtitle: "25 cartes : sextos, exs et lendemains qui piquent.",
             unlocked: settings.adultContentUnlocked,
             isOn: packBinding(.soiree),
             onUnlock: { showAgeGate = true }

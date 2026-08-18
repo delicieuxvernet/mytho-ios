@@ -167,7 +167,7 @@ struct WouldYouRatherEngine {
 
     /// Un seul identifiant de paquet pour les trois modes : changer de mode en
     /// cours de soirée ne doit pas faire revenir les dilemmes déjà vus.
-    static let deckID = "would-you-rather.v2"
+    static let deckID = "would-you-rather.v3"
 
     static func makeDeck(
         adultUnlocked: Bool = false,

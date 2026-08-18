@@ -361,14 +361,14 @@ final class MostLikelyTests: XCTestCase {
 
     // MARK: - Pioche et carte
 
-    /// Le paquet ouvert fait 30 cartes, la mémoire de pioche en couvre 70 % :
-    /// vingt-et-un tirages d'affilée ne remontrent jamais la même (spec §8).
+    /// Le paquet ouvert fait 20 cartes, la mémoire de pioche en couvre 70 % :
+    /// quinze tirages d'affilée ne remontrent jamais la même (spec §8).
     func testACardNeverComesBackWithinAGame() throws {
         let players = table(4)
         var engine = try XCTUnwrap(makeEngine(players, options: options(limit: .endless)))
 
         var seen: [String] = [engine.card.id]
-        for _ in 0..<20 {
+        for _ in 0..<14 {
             playQuickRound(&engine, designating: players[0].id)
             engine.nextRound()
             seen.append(engine.card.id)
@@ -467,14 +467,14 @@ final class MostLikelyTests: XCTestCase {
     // MARK: - Contenu (spec §3.5)
 
     func testPackVolumesMatchTheSpec() {
-        XCTAssertEqual(MostLikelyPack.potes.cards.count, 30)
-        XCTAssertEqual(MostLikelyPack.soiree.cards.count, 30)
+        XCTAssertEqual(MostLikelyPack.potes.cards.count, 20)
+        XCTAssertEqual(MostLikelyPack.soiree.cards.count, 25)
         XCTAssertEqual(
             MostLikelyBank.cards(for: MostLikelyPack.defaultSelection).count,
-            30,
-            "Le paquet ouvert fait les 30 cartes annoncées"
+            20,
+            "Le paquet ouvert fait les 20 cartes annoncées"
         )
-        XCTAssertEqual(MostLikelyBank.all.count, 60)
+        XCTAssertEqual(MostLikelyBank.all.count, 45)
     }
 
     func testNoCardIsEmptyOrDuplicated() {

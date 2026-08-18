@@ -232,7 +232,7 @@ struct WouldYouRatherView: View {
     private var extremePanel: some View {
         AdultPackBanner(
             title: "Dilemmes Extrême · 18+",
-            subtitle: "40 dilemmes qu'on regrette d'avoir posés.",
+            subtitle: "25 dilemmes qu'on regrette d'avoir posés.",
             unlocked: settings.adultContentUnlocked,
             isOn: $extremeEnabled,
             onUnlock: { showAgeGate = true }
