@@ -135,20 +135,20 @@ enum NeverHaveIEverBank {
         card(24, "embrassé quelqu'un que je n'aurais pas dû"),
         card(25, "eu un crush sur quelqu'un du groupe"),
         card(26, "dragué en copiant-collant le même message"),
-        card(27, "donné un faux numéro"),
-        card(28, "lu une conversation par-dessus une épaule"),
-        card(29, "dit du mal de quelqu'un juste avant qu'il arrive"),
-        card(30, "envoyé une capture d'écran à la mauvaise personne"),
-        card(31, "menti sur un score à un jeu"),
-        card(32, "été jaloux sans raison valable"),
-        card(33, "vomi dans un endroit très mal choisi"),
-        card(34, "pété en croyant être seul"),
-        card(35, "dormi aux toilettes en soirée"),
-        card(36, "juré de garder un secret et l'avoir dit le soir même"),
-        card(37, "inventé une excuse à base de grand-mère malade"),
-        card(38, "eu envie de frapper quelqu'un ici présent"),
-        card(39, "répondu à un ancien crush après minuit"),
-        card(40, "quitté une soirée sans dire au revoir à personne")
+        card(27, "dit du mal de quelqu'un juste avant qu'il arrive"),
+        card(28, "vomi dans un endroit très mal choisi"),
+        card(29, "dormi aux toilettes en soirée"),
+        card(30, "eu envie de frapper quelqu'un ici présent"),
+        card(31, "répondu à un ancien crush après minuit"),
+        card(32, "quitté une soirée sans dire au revoir à personne"),
+        card(33, "pété en croyant être seul"),
+        card(34, "mangé mes crottes de nez"),
+        card(35, "pété au lit avec quelqu'un et fait semblant de rien"),
+        card(36, "fait caca dans mon pantalon"),
+        card(37, "eu la diarrhée chez quelqu'un d'autre"),
+        card(38, "embrassé quelqu'un juste après avoir vomi"),
+        card(39, "pissé dans la douche en me disant que c'était plus écolo"),
+        card(40, "fait la grosse commission et filé sans me laver les mains")
     ]
 
     // MARK: - Pack verrouillé
@@ -191,12 +191,12 @@ enum NeverHaveIEverBank {
         card(66, "couché avec quelqu'un de pris"),
         card(67, "embrassé quelqu'un du même sexe"),
         card(68, "eu un sex-friend"),
-        card(69, "couché ailleurs que dans un lit"),
-        card(70, "été surpris en pleine action"),
-        card(71, "appelé un ex complètement bourré"),
-        card(72, "bu jusqu'au trou noir complet"),
-        card(73, "fumé de l'herbe"),
-        card(74, "volé dans un magasin"),
-        card(75, "couché avec deux personnes différentes en 24 heures")
+        card(69, "été surpris en pleine action"),
+        card(70, "appelé un ex complètement bourré"),
+        card(71, "fumé de l'herbe"),
+        card(72, "couché avec deux personnes différentes en 24 heures"),
+        card(73, "regardé du porno pendant que quelqu'un dormait à côté"),
+        card(74, "eu un orgasme en pensant à quelqu'un de totalement interdit"),
+        card(75, "envoyé une photo de mes parties intimes par erreur")
     ]
 }
