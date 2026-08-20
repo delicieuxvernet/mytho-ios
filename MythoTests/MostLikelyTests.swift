@@ -377,20 +377,25 @@ final class MostLikelyTests: XCTestCase {
 
     // MARK: - Pioche et carte
 
-    /// Le paquet ouvert fait 20 cartes, la mémoire de pioche en couvre 70 % :
-    /// quinze tirages d'affilée ne remontrent jamais la même (spec §8).
+    /// Une carte ne revient jamais tant que le paquet n'a pas défilé en entier
+    /// (spec §8). On tire donc exactement la taille du paquet, et les tirages
+    /// doivent tous différer. Le nombre se **déduit** du paquet : écrit en dur,
+    /// ce test repasserait au rouge au prochain écrémage sans qu'aucune
+    /// régression n'ait eu lieu — c'est arrivé le 20 août.
     func testACardNeverComesBackWithinAGame() throws {
         let players = table(4)
         var engine = try XCTUnwrap(makeEngine(players, options: options(limit: .endless)))
+        let taille = MostLikelyPack.soiree.cards.count
 
         var seen: [String] = [engine.card.id]
-        for _ in 0..<14 {
+        for _ in 1..<taille {
             playQuickRound(&engine, designating: players[0].id)
             engine.nextRound()
             seen.append(engine.card.id)
         }
-        XCTAssertEqual(Set(seen).count, seen.count)
-        XCTAssertFalse(engine.hasLoopedDeck)
+        XCTAssertEqual(seen.count, taille, "Le tour du paquet doit se jouer en entier")
+        XCTAssertEqual(Set(seen).count, seen.count, "Une carte est revenue avant la fin du paquet")
+        XCTAssertFalse(engine.hasLoopedDeck, "Le paquet ne doit pas avoir bouclé avant d'être épuisé")
     }
 
     func testTheCardTiltIsFrozenWhenItIsDealt() throws {
