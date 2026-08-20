@@ -53,7 +53,9 @@ targets:
         # La 1.0.0 est publiée : Apple clôt son « train » et refuse tout
         # nouveau build à ce numéro. Chaque release App Store impose donc de
         # bumper ici avant le push suivant.
-        MARKETING_VERSION: "1.1.0"
+        # 1.1.0 est approuvee et en vente depuis le 20 aout 2026 : son train est
+        # ferme, TestFlight refuse tout nouveau build qui la porte encore.
+        MARKETING_VERSION: "1.2.0"
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
