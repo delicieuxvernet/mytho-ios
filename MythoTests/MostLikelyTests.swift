@@ -484,13 +484,13 @@ final class MostLikelyTests: XCTestCase {
 
     func testPackVolumesMatchTheSpec() {
         XCTAssertEqual(MostLikelyPack.potes.cards.count, 0, "Vidé par l'écrémage du 20 août : c'est voulu")
-        XCTAssertEqual(MostLikelyPack.soiree.cards.count, 15)
+        XCTAssertEqual(MostLikelyPack.soiree.cards.count, 14)
         XCTAssertEqual(
             MostLikelyBank.cards(for: MostLikelyPack.defaultSelection).count,
             0,
             "Le paquet tout public est vide : l'écran doit le dire, pas servir du 18+"
         )
-        XCTAssertEqual(MostLikelyBank.all.count, 15)
+        XCTAssertEqual(MostLikelyBank.all.count, 14)
     }
 
     func testNoCardIsEmptyOrDuplicated() {

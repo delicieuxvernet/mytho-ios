@@ -125,15 +125,15 @@ enum NeverHaveIEverBank {
         card(27, "couché avec l'ex de quelqu'un qui est là ce soir"),
         card(28, "classé les gens de cette pièce du plus au moins baisable"),
         card(29, "eu envie d'embrasser la personne assise à ma droite"),
-        card(32, "simulé un orgasme, l'autre simulait aussi"),
-        card(33, "trompé quelqu'un qui me trompait déjà"),
-        card(34, "surpris un couple puis été surpris par eux la même nuit"),
-        card(35, "fini avant que l'autre ait enlevé son pantalon"),
-        card(36, "regardé l'heure par-dessus son épaule en plein rapport"),
+        card(32, "simulé un orgasme"),
+        card(33, "trompé mon/ma partenaire"),
+        card(34, "surpris un couple"),
+        card(35, "fini en 30 secondes"),
+        card(36, "regardé l'heure en plein rapport"),
         card(39, "laissé un vocal de quatre minutes à mon ex, bourré"),
-        card(40, "dit je t'aime juste pour finir la nuit chez quelqu'un"),
+        card(40, "dit je t'aime sans le penser"),
         card(42, "gardé quelqu'un en réserve au cas où l'autre me lâche"),
         card(44, "fait semblant de dormir pour éviter la deuxième fois"),
-        card(45, "menti sur mon nombre de partenaires et entendu pire en face")
+        card(45, "menti sur mon nombre de partenaires")
     ]
 }

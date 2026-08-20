@@ -18,13 +18,15 @@ struct MostLikelyCard: Identifiable, Hashable, Sendable {
 
 // MARK: - Packs
 
-/// Les deux paquets du jeu (écrémage d'Arthur du 17 août) : peu de cartes,
+/// Les deux paquets du jeu (écrémages d'Arthur des 17 et 20 août) : peu de cartes,
 /// que des essentielles. Le contenu se stocke en Swift et pas en JSON
 /// (spec §1.2) : vérifié à la compilation, relisible en diff de PR.
 enum MostLikelyPack: String, CaseIterable, Identifiable, Sendable {
-    /// 20 cartes tout public : les hontes physiques qu'on nie en public.
+    /// Vidé par l'écrémage d'Arthur du 20 août : plus une seule carte, et
+    /// c'est voulu. Le jeu ne se lance donc plus sans le paquet Soirée.
+    /// `available(unlockedExtras:)` cesse de le proposer tant qu'il est vide.
     case potes
-    /// 25 cartes 18+ : la soirée qui dérape, assumée.
+    /// Le seul paquet qui reste : 18+, la soirée qui dérape, assumée.
     case soiree
 
     var id: String { rawValue }
@@ -108,13 +110,12 @@ enum MostLikelyBank {
 
     static let soireeCards: [MostLikelyCard] = [
         MostLikelyCard(id: "mst_022", text: "avoir un historique porno à nettoyer en panique"),
-        MostLikelyCard(id: "mst_026", text: "envoyer un nude à la mauvaise personne et un bonjour poli à la bonne"),
-        MostLikelyCard(id: "mst_027", text: "quitter quelqu'un par message et se faire quitter par le même message"),
+        MostLikelyCard(id: "mst_026", text: "envoyer un nude à la mauvaise personne"),
+        MostLikelyCard(id: "mst_027", text: "quitter quelqu'un par message"),
         MostLikelyCard(id: "mst_028", text: "bloquer son ex à 2h, le débloquer à 4h, le rebloquer à 6h"),
-        MostLikelyCard(id: "mst_029", text: "jurer à toute la table que c'est fini avec son ex et repartir chez son ex"),
-        MostLikelyCard(id: "mst_030", text: "proposer un plan à trois à 4h du matin et le regretter à 4h02"),
+        MostLikelyCard(id: "mst_029", text: "jurer à toute la table que c'est fini avec son ex et repartir chez son ex le soir même"),
+        MostLikelyCard(id: "mst_030", text: "proposer un plan à trois à 4h du matin"),
         MostLikelyCard(id: "mst_031", text: "jurer de tenir très bien l'alcool et finir à genoux devant les toilettes"),
-        MostLikelyCard(id: "mst_032", text: "rentrer avec quelqu'un ce soir et jurer demain qu'il ne s'est rien passé"),
         MostLikelyCard(id: "mst_038", text: "avoir déjà couché avec quelqu'un présent ce soir sans que la table le sache"),
         MostLikelyCard(id: "mst_040", text: "finir dans le lit de quelqu'un de cette pièce avant la fin de la soirée"),
         MostLikelyCard(id: "mst_041", text: "embrasser deux personnes de cette pièce dans la même soirée sans que ça se sache"),
