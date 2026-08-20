@@ -35,13 +35,34 @@ final class GameSession: ObservableObject {
     /// Annule la dernière action (mauvais appui, vote désigné trop vite…).
     func goBack() {
         guard canGoBack, let previous = history.popLast() else { return }
+        // Filet de sécurité : un état de distribution ne remonte jamais à
+        // l'écran, il y rouvrirait la carte d'un joueur devant toute la table.
+        // `remember()` n'en enregistre plus, ce garde couvre le jour où un
+        // nouvel appel en glisserait un.
+        guard !previous.isDealing else {
+            history.removeAll()
+            return
+        }
         engine = previous
     }
 
     private func remember() {
         guard let engine else { return }
+        // Aucun instantané pendant la distribution. Le « Retour » y rembobinait
+        // jusqu'à l'écran du joueur précédent — son mot en clair, sous les yeux
+        // de la table (constaté en soirée le 20 août 2026). Un joueur qui a
+        // oublié son mot passe désormais par « Ma carte », qui ne rembobine
+        // rien et exige de dire qui on est.
+        guard !engine.isDealing else { return }
         history.append(engine)
         if history.count > historyLimit { history.removeFirst() }
+    }
+
+    /// Une carte est-elle déjà distribuée, donc relisible ? Faux avant la
+    /// première pioche et une fois la manche terminée (les rôles sont publics).
+    var canPeekCards: Bool {
+        guard let engine, !engine.isFinished else { return false }
+        return engine.players.contains { $0.role != nil }
     }
 
     /// Les dernières paires jouées, pour ne pas retomber dessus tout de suite.

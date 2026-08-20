@@ -169,27 +169,8 @@ struct DealView: View {
 
             // Pouvoir surajouté : lu en même temps que le mot, à l'abri des regards.
             if let special = engine.players[playerIndex].specialRole {
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: special.symbol)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Theme.amber)
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(special.displayName)
-                            .font(Theme.caption(14))
-                            .foregroundStyle(Theme.amber)
-                        Text(special.briefing)
-                            .font(Theme.caption(13))
-                            .foregroundStyle(skin.inkMuted)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                        .fill(Theme.amber.opacity(0.10))
-                )
-                .padding(.horizontal, Theme.gutter)
+                SpecialRoleNote(role: special)
+                    .padding(.horizontal, Theme.gutter)
             }
 
             VStack(spacing: 10) {
@@ -254,16 +235,35 @@ private struct CardBack: View {
 
 /// La carte retournée, plein cadre. Le retournement 3D part du dos violet et
 /// bascule sur la face claire portant le mot.
-private struct WordCard: View {
+///
+/// Partagée avec « Ma carte » (`PeekCardView`) : une seule définition, donc
+/// aucun risque que la carte relue ne ressemble plus à la carte piochée.
+struct WordCard: View {
     let role: Role
     let word: String?
     let showRole: Bool
-    let cardIndex: Int
-    let namespace: Namespace.ID
+    /// Position de la carte dans le paquet : c'est elle qui porte le vol depuis
+    /// la grille de pioche. Nil quand la carte s'affiche seule — il n'y a alors
+    /// aucun paquet à l'écran d'où partir.
+    var cardIndex: Int?
+    var namespace: Namespace.ID?
 
     @State private var flipped = false
 
     var body: some View {
+        Group {
+            if let namespace, let cardIndex {
+                card.matchedGeometryEffect(id: "card-\(cardIndex)", in: namespace, isSource: false)
+            } else {
+                card
+            }
+        }
+        .onAppear {
+            withAnimation(Theme.flip) { flipped = true }
+        }
+    }
+
+    private var card: some View {
         ZStack {
             back.opacity(flipped ? 0 : 1)
             front.opacity(flipped ? 1 : 0)
@@ -274,10 +274,6 @@ private struct WordCard: View {
             axis: (x: 0, y: 1, z: 0),
             perspective: 0.45
         )
-        .matchedGeometryEffect(id: "card-\(cardIndex)", in: namespace, isSource: false)
-        .onAppear {
-            withAnimation(Theme.flip) { flipped = true }
-        }
     }
 
     private var back: some View {
