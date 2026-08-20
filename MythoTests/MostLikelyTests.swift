@@ -20,9 +20,25 @@ final class MostLikelyTests: XCTestCase {
         (0..<count).map { Participant(name: "J\($0)") }
     }
 
+    /// Des réglages qui sortent réellement des cartes. Depuis l'écrémage du
+    /// 20 août 2026, le paquet ouvert est **vide** : partir de la sélection par
+    /// défaut donnerait un paquet de zéro carte, et tous les tests de moteur
+    /// échoueraient pour une raison qui n'a rien à voir avec ce qu'ils testent.
+    private func jouables(
+        limit: MostLikelyEngine.RoundLimit = .twelve,
+        counting: MostLikelyEngine.Counting = .quick
+    ) -> MostLikelyEngine.Options {
+        MostLikelyEngine.Options(
+            limit: limit,
+            counting: counting,
+            packs: [.soiree],
+            adultUnlocked: true
+        )
+    }
+
     private func makeEngine(
         _ players: [Participant],
-        options: MostLikelyEngine.Options = MostLikelyEngine.Options(),
+        options: MostLikelyEngine.Options? = nil,
         scores: ScoreBoard? = nil,
         seed: UInt64 = 42,
         store: any DeckMemoryStore = MemoryOnlyDeckStore()
@@ -30,7 +46,7 @@ final class MostLikelyTests: XCTestCase {
         var generator = SeededGenerator(seed: seed)
         return MostLikelyEngine(
             players: players,
-            options: options,
+            options: options ?? jouables(),
             scores: scores,
             store: store,
             using: &generator
@@ -41,7 +57,7 @@ final class MostLikelyTests: XCTestCase {
         limit: MostLikelyEngine.RoundLimit = .twelve,
         counting: MostLikelyEngine.Counting = .quick
     ) -> MostLikelyEngine.Options {
-        MostLikelyEngine.Options(limit: limit, counting: counting, packs: MostLikelyPack.defaultSelection)
+        jouables(limit: limit, counting: counting)
     }
 
     /// Joue une manche complète en mode rapide.
@@ -467,14 +483,14 @@ final class MostLikelyTests: XCTestCase {
     // MARK: - Contenu (spec §3.5)
 
     func testPackVolumesMatchTheSpec() {
-        XCTAssertEqual(MostLikelyPack.potes.cards.count, 20)
-        XCTAssertEqual(MostLikelyPack.soiree.cards.count, 25)
+        XCTAssertEqual(MostLikelyPack.potes.cards.count, 0, "Vidé par l'écrémage du 20 août : c'est voulu")
+        XCTAssertEqual(MostLikelyPack.soiree.cards.count, 15)
         XCTAssertEqual(
             MostLikelyBank.cards(for: MostLikelyPack.defaultSelection).count,
-            20,
-            "Le paquet ouvert fait les 20 cartes annoncées"
+            0,
+            "Le paquet tout public est vide : l'écran doit le dire, pas servir du 18+"
         )
-        XCTAssertEqual(MostLikelyBank.all.count, 45)
+        XCTAssertEqual(MostLikelyBank.all.count, 15)
     }
 
     func testNoCardIsEmptyOrDuplicated() {
@@ -528,17 +544,29 @@ final class MostLikelyTests: XCTestCase {
     /// « Entre potes » est tout public ; « Soirée » vit derrière la porte
     /// d'âge et n'apparaît jamais tant qu'elle n'est pas passée.
     func testOnlyTheAdultPackHidesBehindTheAgeGate() {
-        XCTAssertTrue(MostLikelyPack.available(unlockedExtras: false).contains(.potes))
         XCTAssertFalse(MostLikelyPack.available(unlockedExtras: false).contains(.soiree),
                        "Le 18+ reste invisible tant que l'âge n'est pas confirmé")
         XCTAssertTrue(MostLikelyPack.available(unlockedExtras: true).contains(.soiree))
         XCTAssertFalse(MostLikelyPack.defaultSelection.contains(.soiree), "Jamais coché d'office")
     }
 
-    /// Un réglage sauvegardé qui ne pointe plus sur rien ne doit pas rendre une
-    /// partie injouable.
-    func testAnEmptySelectionFallsBackOnTheBasePack() {
-        XCTAssertEqual(MostLikelyBank.cards(for: []).count, MostLikelyPack.potes.cards.count)
+    /// Un paquet vidé de ses cartes ne se propose plus : cocher une case qui ne
+    /// sortira jamais rien est une promesse qu'on ne tient pas. Le paquet
+    /// « Entre potes » est dans ce cas depuis l'écrémage du 20 août.
+    func testAnEmptiedPackIsNotOfferedAnymore() {
+        XCTAssertTrue(MostLikelyPack.potes.cards.isEmpty, "État attendu après l'écrémage")
+        XCTAssertFalse(MostLikelyPack.available(unlockedExtras: false).contains(.potes))
+        XCTAssertFalse(MostLikelyPack.available(unlockedExtras: true).contains(.potes))
+    }
+
+    /// Sans confirmation d'âge, il n'y a plus rien à jouer — et le moteur doit
+    /// le dire en refusant de démarrer, jamais en piochant dans le 18+.
+    func testWithoutTheAgeGateThereIsNothingLeftToPlay() {
+        XCTAssertTrue(MostLikelyBank.cards(for: [], adultUnlocked: false).isEmpty)
+        XCTAssertNil(
+            makeEngine(table(4), options: MostLikelyEngine.Options()),
+            "Un paquet sans carte ne lance pas de partie"
+        )
     }
 
     /// Le verrou 18+ vit dans la banque, pas seulement dans l'écran : cocher
@@ -563,19 +591,28 @@ final class MostLikelyTests: XCTestCase {
             "Le 18+ seul et verrouillé retombe sur le paquet tout public"
         )
 
-        // Et jusque dans le moteur : une partie lancée verrou fermé ne pioche
-        // que du tout public, même si la sélection porte les deux paquets.
-        let publiques = Set(MostLikelyPack.potes.cards.map(\.id))
+        // Et jusque dans le moteur. Le paquet tout public étant vide depuis
+        // l'écrémage du 20 août, le verrou fermé ne laisse plus AUCUNE carte :
+        // le moteur doit refuser de démarrer. C'est plus fort que l'ancienne
+        // version du test, qui vérifiait que les cartes piochées étaient
+        // publiques — ici, il ne doit pas y avoir de pioche du tout.
         var reglages = options(limit: .endless)
         reglages.packs = tout
         reglages.adultUnlocked = false
+        XCTAssertNil(
+            makeEngine(table(4), options: reglages),
+            "Verrou fermé et paquet public vide : aucune partie ne se lance, et surtout aucune carte 18+"
+        )
 
+        // Verrou ouvert, en revanche, la partie tourne et ne pioche que du 18+.
+        let adultes = Set(MostLikelyPack.soiree.cards.map(\.id))
+        reglages.adultUnlocked = true
         let players = table(4)
         guard var engine = makeEngine(players, options: reglages) else {
-            return XCTFail("Le moteur doit se lancer")
+            return XCTFail("Le moteur doit se lancer une fois l'âge confirmé")
         }
         for _ in 0..<30 {
-            XCTAssertTrue(publiques.contains(engine.card.id), "\(engine.card.id) a fui le verrou 18+")
+            XCTAssertTrue(adultes.contains(engine.card.id), "\(engine.card.id) sort d'un paquet inattendu")
             playQuickRound(&engine, designating: players[0].id)
             engine.nextRound()
         }

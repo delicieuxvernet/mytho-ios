@@ -97,26 +97,11 @@ enum NeverHaveIEverBank {
     /// confirmation d'âge : ni sexe, ni alcool, ni drogue (l'app est en 17+,
     /// c'est la porte d'âge interne qui sépare les deux étages).
     private static let potesCards: [ConfessionCard] = [
-        card(1, "mangé mes crottes de nez"),
-        card(2, "pété au lit avec quelqu'un et fait semblant de rien"),
-        card(3, "fait caca dans mon pantalon"),
-        card(4, "eu la diarrhée chez quelqu'un d'autre"),
         card(5, "embrassé quelqu'un juste après avoir vomi"),
-        card(6, "pissé dans la douche en me disant que c'était plus écolo"),
-        card(7, "fait la grosse commission et filé sans me laver les mains"),
         card(8, "pissé dans une bouteille et l'avoir oubliée dans ma chambre"),
         card(9, "oublié le prénom de quelqu'un qui venait de m'appeler par le mien"),
-        card(10, "recraché dans le plat avant de le servir aux autres"),
-        card(11, "léché mes doigts avant de les replonger dans le plat commun"),
-        card(12, "gratté mes fesses puis serré des mains toute la soirée"),
-        card(13, "bouché les toilettes chez quelqu'un et fui sans rien dire"),
         card(14, "lu les messages de quelqu'un pendant qu'il dormait"),
-        card(15, "fait pipi dans la piscine pendant que les autres nageaient"),
-        card(16, "vomi quelque part que personne n'a jamais retrouvé"),
-        card(17, "essuyé mes mains sales sur le manteau d'un inconnu"),
-        card(18, "porté le slip de quelqu'un d'autre faute de mieux"),
-        card(19, "gardé un pet tout un trajet et lâché juste avant de sortir"),
-        card(20, "fait tomber mon téléphone dans les toilettes et m'en sers encore")
+        card(15, "fait pipi dans la piscine pendant que les autres nageaient")
     ]
 
     // MARK: - Pack verrouillé
@@ -140,20 +125,14 @@ enum NeverHaveIEverBank {
         card(27, "couché avec l'ex de quelqu'un qui est là ce soir"),
         card(28, "classé les gens de cette pièce du plus au moins baisable"),
         card(29, "eu envie d'embrasser la personne assise à ma droite"),
-        card(30, "trouvé un ex présent ce soir meilleur au lit que l'actuel"),
-        card(31, "crié le mauvais prénom et entendu le mauvais prénom en retour"),
         card(32, "simulé un orgasme, l'autre simulait aussi"),
         card(33, "trompé quelqu'un qui me trompait déjà"),
         card(34, "surpris un couple puis été surpris par eux la même nuit"),
         card(35, "fini avant que l'autre ait enlevé son pantalon"),
         card(36, "regardé l'heure par-dessus son épaule en plein rapport"),
-        card(37, "cherché mon slip dans le noir chez un parfait inconnu"),
-        card(38, "croisé un plan d'un soir au boulot le lundi suivant"),
         card(39, "laissé un vocal de quatre minutes à mon ex, bourré"),
         card(40, "dit je t'aime juste pour finir la nuit chez quelqu'un"),
-        card(41, "resté un an de plus juste parce que le sexe était bon"),
         card(42, "gardé quelqu'un en réserve au cas où l'autre me lâche"),
-        card(43, "oublié le prénom de quelqu'un pendant qu'il était sur moi"),
         card(44, "fait semblant de dormir pour éviter la deuxième fois"),
         card(45, "menti sur mon nombre de partenaires et entendu pire en face")
     ]
