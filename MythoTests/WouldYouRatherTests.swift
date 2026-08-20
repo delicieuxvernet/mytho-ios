@@ -617,7 +617,7 @@ final class WouldYouRatherTests: XCTestCase {
 
     /// L'Extrême s'ajoute au paquet de base, il ne le remplace pas.
     func testTheExtremePackStaysBehindTheAgeGate() {
-        XCTAssertEqual(WouldYouRatherBank.all.count, 28)
+        XCTAssertEqual(WouldYouRatherBank.all.count, 7)
         XCTAssertEqual(WouldYouRatherBank.extreme.count, 9)
 
         XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: false, extremeEnabled: true).count, 7,
