@@ -356,6 +356,14 @@ struct GameEngine: Sendable {
         return false
     }
 
+    /// La distribution est-elle en cours ? Sert à interdire tout retour en
+    /// arrière tant que les cartes circulent : un état de distribution ramené
+    /// à l'écran, c'est le mot d'un joueur affiché devant les autres.
+    var isDealing: Bool {
+        if case .dealing = phase { return true }
+        return false
+    }
+
     var outcome: RoundOutcome? {
         if case .finished(let outcome) = phase { return outcome }
         return nil

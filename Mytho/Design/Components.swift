@@ -352,6 +352,38 @@ struct RoleBadge: View {
     }
 }
 
+/// Rappel du pouvoir d'un joueur, lu en même temps que son mot et donc à
+/// l'abri des regards. Partagé par la pioche et par « Ma carte » : le joueur
+/// qui relit doit retrouver exactement ce qu'il a vu la première fois.
+struct SpecialRoleNote: View {
+    @Environment(\.skin) private var skin
+
+    let role: SpecialRole
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: role.symbol)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(Theme.amber)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(role.displayName)
+                    .font(Theme.caption(14))
+                    .foregroundStyle(Theme.amber)
+                Text(role.briefing)
+                    .font(Theme.caption(13))
+                    .foregroundStyle(skin.inkMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                .fill(Theme.amber.opacity(0.10))
+        )
+    }
+}
+
 // MARK: - Avatars
 
 /// Pastille colorée + initiale, cerclée comme un autocollant. Passer la table

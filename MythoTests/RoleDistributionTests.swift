@@ -91,6 +91,39 @@ final class RoleDistributionTests: XCTestCase {
         XCTAssertEqual(undercoverBySeat.reduce(0, +), deals)
     }
 
+    /// Les tests ci-dessus pilotent le moteur avec un générateur de test, qui
+    /// rend les manches rejouables. Celui-ci utilise le générateur **réel** de
+    /// l'app — `SystemRandomNumberGenerator`, celui du système — pour que la
+    /// garantie porte sur le tirage tel qu'il se produit sur le téléphone, et
+    /// pas seulement sur l'algorithme de mélange.
+    func testTheGeneratorUsedInProductionIsAlsoUnbiased() {
+        let deals = 6_000
+        var byCard = [Int](repeating: 0, count: 6)
+        var generator = SystemRandomNumberGenerator()
+        let config = GameConfig(
+            playerNames: (1...6).map { "J\($0)" },
+            undercoverCount: 1,
+            mrWhiteCount: 1
+        )
+
+        for _ in 0..<deals {
+            let deck = GameEngine(config: config, pair: pair, using: &generator).deck
+            if let index = deck.firstIndex(of: .undercover) {
+                byCard[index] += 1
+            }
+        }
+
+        // Espérance 1000, écart-type ~28,9 : la bande ±150 vaut > 5 sigmas,
+        // large de quoi ne jamais clignoter en intégration continue.
+        for (position, count) in byCard.enumerated() {
+            XCTAssertTrue(
+                (850...1150).contains(count),
+                "Carte \(position + 1) : \(count) Undercover sur \(deals) — hors bande"
+            )
+        }
+        XCTAssertEqual(byCard.reduce(0, +), deals)
+    }
+
     /// Le mot des civils est tiré au sort dans la paire : sur 4 000 manches,
     /// chaque mot doit être côté civils environ la moitié du temps — sinon un
     /// habitué saurait que « le mot de gauche » est toujours le bon.

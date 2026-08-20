@@ -22,6 +22,7 @@ struct MythoApp: App {
 struct RootView: View {
     @EnvironmentObject private var session: GameSession
     @State private var confirmQuit = false
+    @State private var peeking = false
     /// Nul tant qu'aucun jeu n'est choisi : l'app s'ouvre sur le catalogue.
     @State private var selectedGameID: String?
 
@@ -68,7 +69,10 @@ struct RootView: View {
                         HStack(spacing: 8) {
                             quitButton
                             if session.canGoBack { backButton }
-                            Spacer()
+                            Spacer(minLength: 8)
+                            // À l'opposé des sorties de secours : « Ma carte »
+                            // est un geste de joueur, pas un geste d'arbitre.
+                            if session.canPeekCards { peekButton }
                         }
                         .padding(.horizontal, 8)
                     }
@@ -92,10 +96,22 @@ struct RootView: View {
                 .transition(.opacity)
                 .zIndex(1)
             }
+
+            if peeking, let engine = session.engine {
+                PeekCardView(engine: engine) { peeking = false }
+                    .transition(.opacity)
+                    .zIndex(2)
+            }
         }
         .environment(\.skin, currentSkin)
         .preferredColorScheme(currentSkin.colorScheme)
         .animation(Theme.snap, value: confirmQuit)
+        .animation(Theme.snap, value: peeking)
+        // La manche s'arrête, la relecture n'a plus lieu d'être : sinon la
+        // carte resterait ouverte par-dessus l'écran des réglages.
+        .onChange(of: session.canPeekCards) { _, canPeek in
+            if !canPeek { peeking = false }
+        }
         .statusBarHidden(session.engine != nil)
         .persistentSystemOverlays(session.engine != nil ? .hidden : .automatic)
     }
@@ -174,6 +190,33 @@ struct RootView: View {
         }
         .buttonStyle(PressedStyle())
         .accessibilityLabel("Choisir un autre jeu")
+    }
+
+    /// Relire son mot en cours de partie. Existe pour que plus personne ne
+    /// tente le « Retour » pour ça : il rouvrait la carte du joueur précédent.
+    private var peekButton: some View {
+        Button {
+            Haptics.tap()
+            peeking = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "eye.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .accessibilityHidden(true)
+                Text("Ma carte")
+                    .font(Theme.caption(13))
+            }
+            .foregroundStyle(currentSkin.inkMuted)
+            .padding(.horizontal, 13)
+            .frame(height: Theme.touchTarget)
+            .background(
+                Capsule()
+                    .fill(currentSkin.panel)
+                    .overlay(Capsule().strokeBorder(currentSkin.outline, lineWidth: 2))
+            )
+        }
+        .buttonStyle(PressedStyle())
+        .accessibilityLabel("Revoir ma carte")
     }
 
     /// Un pas en arrière : mauvais appui, joueur éliminé trop vite.
