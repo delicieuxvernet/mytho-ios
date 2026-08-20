@@ -495,16 +495,16 @@ final class NeverHaveIEverTests: XCTestCase {
 
     func testTheAnnouncedVolumeIsThere() {
         XCTAssertNil(NeverHaveIEverBank.pack(id: "soft"), "Le pack Tout public est mort avec l'écrémage du 18 août")
-        XCTAssertEqual(NeverHaveIEverBank.pack(id: "potes")?.cards.count, 20)
-        XCTAssertEqual(NeverHaveIEverBank.allCards.count, 45)
+        XCTAssertEqual(NeverHaveIEverBank.pack(id: "potes")?.cards.count, 5)
+        XCTAssertEqual(NeverHaveIEverBank.allCards.count, 24)
     }
 
     /// Le pack épicé est 18+ : verrouillé tant que l'âge n'est pas confirmé,
-    /// jouable ensuite. 25 cartes depuis la généralisation du 18 août.
+    /// jouable ensuite. 19 cartes depuis l'écrémage d'Arthur du 20 août.
     func testTheSpicyPackIsLockedButFull() {
         let epice = NeverHaveIEverBank.pack(id: "epice")
         XCTAssertEqual(epice?.isLocked, true)
-        XCTAssertEqual(epice?.cards.count, 25)
+        XCTAssertEqual(epice?.cards.count, 19)
 
         XCTAssertFalse(NeverHaveIEverBank.selectablePacks(adultUnlocked: false).contains { $0.id == "epice" })
         XCTAssertTrue(
@@ -514,19 +514,19 @@ final class NeverHaveIEverTests: XCTestCase {
     }
 
     func testPackSelectionFallsBackRatherThanShippingAnEmptyDeck() {
-        XCTAssertEqual(NeverHaveIEverBank.cards(in: ["potes"], adultUnlocked: false).count, 20)
-        XCTAssertEqual(NeverHaveIEverBank.cards(in: ["potes", "epice"], adultUnlocked: false).count, 20, "Le verrou retire les cartes 18+ même si le réglage sauvegardé les liste")
-        XCTAssertEqual(NeverHaveIEverBank.cards(in: ["potes", "epice"], adultUnlocked: true).count, 45)
+        XCTAssertEqual(NeverHaveIEverBank.cards(in: ["potes"], adultUnlocked: false).count, 5)
+        XCTAssertEqual(NeverHaveIEverBank.cards(in: ["potes", "epice"], adultUnlocked: false).count, 5, "Le verrou retire les cartes 18+ même si le réglage sauvegardé les liste")
+        XCTAssertEqual(NeverHaveIEverBank.cards(in: ["potes", "epice"], adultUnlocked: true).count, 24)
         XCTAssertEqual(
-            NeverHaveIEverBank.cards(in: [], adultUnlocked: false).count, 20,
+            NeverHaveIEverBank.cards(in: [], adultUnlocked: false).count, 5,
             "Une sélection vide retombe sur les paquets par défaut"
         )
         XCTAssertEqual(
-            NeverHaveIEverBank.cards(in: ["epice"], adultUnlocked: true).count, 25,
+            NeverHaveIEverBank.cards(in: ["epice"], adultUnlocked: true).count, 19,
             "Le pack 18+ seul est une sélection valable une fois l'âge confirmé"
         )
         XCTAssertEqual(
-            NeverHaveIEverBank.cards(in: ["disparu"], adultUnlocked: false).count, 20,
+            NeverHaveIEverBank.cards(in: ["disparu"], adultUnlocked: false).count, 5,
             "Une sélection qui ne pointe plus sur rien retombe sur les paquets par défaut"
         )
     }
@@ -598,7 +598,7 @@ final class NeverHaveIEverTests: XCTestCase {
             "tiktok", "instagram", "netflix", "tinder", "snapchat", "uber"
         ]
         let adult = NeverHaveIEverBank.pack(id: "epice")?.cards ?? []
-        XCTAssertEqual(adult.count, 25)
+        XCTAssertEqual(adult.count, 19)
         for card in adult {
             let words = card.text
                 .lowercased()

@@ -108,6 +108,12 @@ struct MostLikelyView: View {
                         .foregroundStyle(skin.ink.opacity(0.75))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
+                } else if !hasCards {
+                    Text("Aucune carte à jouer : active le paquet Soirée pour lancer une partie.")
+                        .font(Theme.caption(13))
+                        .foregroundStyle(skin.ink.opacity(0.75))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 PrimaryButton(
@@ -115,7 +121,7 @@ struct MostLikelyView: View {
                     systemImage: "play.fill",
                     tint: Theme.amber,
                     foreground: Theme.night,
-                    isEnabled: hasEnoughPlayers
+                    isEnabled: canStart
                 ) {
                     startGame()
                 }
@@ -145,20 +151,30 @@ struct MostLikelyView: View {
         .padding(.bottom, 2)
     }
 
-    private var packsPanel: some View {
-        Panel {
-            VStack(alignment: .leading, spacing: 12) {
-                panelTitle("Paquets", symbol: "rectangle.stack.fill")
+    /// Les paquets tout public seulement : le « Soirée » 18+ vit dans son
+    /// bandeau rose sous le panneau, jamais dans la liste.
+    private var publicPacks: [MostLikelyPack] {
+        MostLikelyPack.available(unlockedExtras: settings.adultContentUnlocked)
+            .filter { !$0.isLocked }
+    }
 
-                // Les paquets tout public seulement : le « Soirée » 18+ vit
-                // dans son bandeau rose sous le panneau, jamais dans la liste.
-                ForEach(MostLikelyPack.available(unlockedExtras: settings.adultContentUnlocked)
-                    .filter { !$0.isLocked }) { pack in
-                    OptionToggle(
-                        title: "\(pack.name) · \(pack.cards.count) cartes",
-                        subtitle: pack.subtitle,
-                        isOn: packBinding(pack)
-                    )
+    @ViewBuilder
+    private var packsPanel: some View {
+        // Panneau escamoté quand il n'y a rien à cocher : depuis l'écrémage du
+        // 20 août il n'existe plus de paquet tout public, et un cadre
+        // « Paquets » vide ne dit rien à personne.
+        if !publicPacks.isEmpty {
+            Panel {
+                VStack(alignment: .leading, spacing: 12) {
+                    panelTitle("Paquets", symbol: "rectangle.stack.fill")
+
+                    ForEach(publicPacks) { pack in
+                        OptionToggle(
+                            title: "\(pack.name) · \(pack.cards.count) cartes",
+                            subtitle: pack.subtitle,
+                            isOn: packBinding(pack)
+                        )
+                    }
                 }
             }
         }
@@ -169,7 +185,9 @@ struct MostLikelyView: View {
     private var soireeBanner: some View {
         AdultPackBanner(
             title: "Paquet Soirée · 18+",
-            subtitle: "25 cartes : sextos, exs et lendemains qui piquent.",
+            // Compté sur le paquet réel : un chiffre écrit en dur devient faux
+            // au premier écrémage, et il est écrit juste sous la porte d'âge.
+            subtitle: "\(MostLikelyPack.soiree.cards.count) cartes : sextos, exs et lendemains qui piquent.",
             unlocked: settings.adultContentUnlocked,
             isOn: packBinding(.soiree),
             onUnlock: { showAgeGate = true }
@@ -791,7 +809,7 @@ struct MostLikelyView: View {
     // MARK: - Actions
 
     private func startGame() {
-        guard hasEnoughPlayers else { return }
+        guard canStart else { return }
         roster.beginRound()
         resetRoundState()
         engine = MostLikelyEngine(players: roster.participants, options: launchOptions)
@@ -995,6 +1013,19 @@ struct MostLikelyView: View {
     private var hasEnoughPlayers: Bool {
         roster.activePlayers.count >= MostLikelyEngine.minimumPlayers
     }
+
+    /// Y a-t-il seulement une carte à jouer ? Depuis l'écrémage du 20 août
+    /// 2026 le paquet tout public est vide : une table qui n'a pas confirmé
+    /// son âge n'a rien, et « Commencer » doit le dire au lieu de lancer une
+    /// partie sans une seule carte.
+    private var hasCards: Bool {
+        !MostLikelyBank.cards(
+            for: options.packs,
+            adultUnlocked: settings.adultContentUnlocked
+        ).isEmpty
+    }
+
+    private var canStart: Bool { hasEnoughPlayers && hasCards }
 
     private func packBinding(_ pack: MostLikelyPack) -> Binding<Bool> {
         Binding(

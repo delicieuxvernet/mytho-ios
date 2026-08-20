@@ -101,6 +101,24 @@ def check(name, entries, expected_count, id_prefix=None, max_len=None, adult=Fal
     return ok
 
 
+def numeros_sains(prefixe, *lots):
+    """Un identifiant n'est JAMAIS reattribue : une carte retiree emporte son
+    numero. On verifie donc l'unicite globale et l'ordre croissant DANS chaque
+    paquet — jamais la continuite de la suite, les trous sont la regle."""
+    ok = True
+    tous = []
+    for lot in lots:
+        suite = [int(i.split("_")[1]) for i, _ in lot]
+        if suite != sorted(suite):
+            print(f"  ECHEC {prefixe} : numeros dans le desordre")
+            ok = False
+        tous += suite
+    if len(set(tous)) != len(tous):
+        print(f"  ECHEC {prefixe} : un numero sert deux fois")
+        ok = False
+    return ok
+
+
 def load(path, pattern):
     src = open(f"{REPO}/{path}", encoding="utf-8").read()
     return re.findall(pattern, src)
@@ -109,32 +127,29 @@ def load(path, pattern):
 def run(which: str) -> bool:
     ok = True
     if which in ("nhie", "all"):
-        entries = load(
-            "Mytho/Core/Games/NeverHaveIEver/NeverHaveIEverContent.swift",
-            r'card\((\d+),\s*"((?:[^"\\]|\\.)*)"\)',
-        )
-        entries = [(f"nhie_{int(n):03d}", t) for n, t in entries]
-        base = [e for e in entries if int(e[0][5:]) <= 20]
-        adult = [e for e in entries if int(e[0][5:]) > 20]
-        ok &= check("Je n'ai jamais (base)", base, 20, max_len=70)
-        ok &= check("Je n'ai jamais (18+)", adult, 25, max_len=70, adult=True)
-        ids = [e[0] for e in entries]
-        if ids != [f"nhie_{i:03d}" for i in range(1, 46)]:
-            print("  ECHEC sequence globale nhie_001..45")
-            ok = False
+        src = open(
+            f"{REPO}/Mytho/Core/Games/NeverHaveIEver/NeverHaveIEverContent.swift",
+            encoding="utf-8",
+        ).read()
+        tete, queue = src.split("// MARK: - Pack verrouillé", 1)
+        motif = r'card\((\d+),\s*"((?:[^"\\]|\\.)*)"\)'
+        base = [(f"nhie_{int(n):03d}", t) for n, t in re.findall(motif, tete)]
+        adult = [(f"nhie_{int(n):03d}", t) for n, t in re.findall(motif, queue)]
+        ok &= check("Je n'ai jamais (base)", base, 5, max_len=70)
+        ok &= check("Je n'ai jamais (18+)", adult, 19, max_len=70, adult=True)
+        ok &= numeros_sains("nhie", base, adult)
     if which in ("ml", "all"):
-        entries = load(
-            "Mytho/Core/Games/MostLikely/MostLikelyContent.swift",
-            r'MostLikelyCard\(id:\s*"(mst_\d+)",\s*text:\s*"((?:[^"\\]|\\.)*)"\)',
-        )
-        base = [e for e in entries if int(e[0][4:]) <= 20]
-        adult = [e for e in entries if int(e[0][4:]) > 20]
-        ok &= check("Le plus susceptible (base)", base, 20, max_len=90)
-        ok &= check("Le plus susceptible (18+)", adult, 25, max_len=90, adult=True)
-        ids = [e[0] for e in entries]
-        if ids != [f"mst_{i:03d}" for i in range(1, 46)]:
-            print("  ECHEC sequence globale mst_001..45")
-            ok = False
+        src = open(
+            f"{REPO}/Mytho/Core/Games/MostLikely/MostLikelyContent.swift",
+            encoding="utf-8",
+        ).read()
+        tete, queue = src.split("// MARK: - Soirée (18+)", 1)
+        motif = r'MostLikelyCard\(id:\s*"(mst_\d+)",\s*text:\s*"((?:[^"\\]|\\.)*)"\)'
+        base = re.findall(motif, tete)
+        adult = re.findall(motif, queue)
+        ok &= check("Le plus susceptible (base)", base, 0, max_len=90)
+        ok &= check("Le plus susceptible (18+)", adult, 14, max_len=90, adult=True)
+        ok &= numeros_sains("mst", base, adult)
     if which in ("wyr", "all"):
         src = open(
             f"{REPO}/Mytho/Core/Games/WouldYouRather/WouldYouRatherContent.swift",
@@ -153,8 +168,8 @@ def run(which: str) -> bool:
         base = [(i, f"{a} / {b}") for i, a, b in raw_base]
         adult = [(i, f"{a} / {b}") for i, a, b in raw_adult]
         options = [(i, a) for i, a, _ in raw] + [(i, b) for i, _, b in raw]
-        ok &= check("Tu préfères (base)", base, 28)
-        ok &= check("Tu préfères (Extrême 18+)", adult, 33, adult=True)
+        ok &= check("Tu préfères (base)", base, 7)
+        ok &= check("Tu préfères (Extrême 18+)", adult, 9, adult=True)
         numeros = [int(i[4:]) for i, _, _ in raw]
         if len(set(numeros)) != len(numeros):
             print("  ECHEC identifiant reattribue : un numero sert deux fois")
