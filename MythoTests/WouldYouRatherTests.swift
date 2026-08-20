@@ -528,7 +528,7 @@ final class WouldYouRatherTests: XCTestCase {
     // MARK: - Intégrité du contenu
 
     func testTheDeckHoldsTheBaseDilemmas() {
-        XCTAssertEqual(WouldYouRatherBank.all.count, 7)
+        XCTAssertEqual(WouldYouRatherBank.all.count, 19)
     }
 
     func testEveryIdentifierIsUniqueAndWellFormed() {
@@ -617,17 +617,17 @@ final class WouldYouRatherTests: XCTestCase {
 
     /// L'Extrême s'ajoute au paquet de base, il ne le remplace pas.
     func testTheExtremePackStaysBehindTheAgeGate() {
-        XCTAssertEqual(WouldYouRatherBank.all.count, 7)
-        XCTAssertEqual(WouldYouRatherBank.extreme.count, 9)
+        XCTAssertEqual(WouldYouRatherBank.all.count, 19)
+        XCTAssertEqual(WouldYouRatherBank.extreme.count, 29)
 
-        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: false, extremeEnabled: true).count, 7,
+        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: false, extremeEnabled: true).count, 19,
                        "Sans confirmation d'âge, l'interrupteur seul ne suffit pas")
-        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: false).count, 7,
+        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: false).count, 19,
                        "L'âge confirmé n'active rien tant que la table n'a pas choisi")
-        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: true).count, 16)
+        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: true).count, 48)
 
         let ids = Set(WouldYouRatherBank.extreme.map(\.id))
-        XCTAssertEqual(ids.count, 9, "Identifiants uniques")
+        XCTAssertEqual(ids.count, 29, "Identifiants uniques")
         XCTAssertTrue(WouldYouRatherBank.extreme.allSatisfy { $0.a.count <= 60 && $0.b.count <= 60 })
     }
 

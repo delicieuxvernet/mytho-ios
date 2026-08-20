@@ -21,7 +21,7 @@ struct Dilemma: Identifiable, Hashable, Sendable {
 
 // MARK: - Le paquet
 
-/// Les 61 dilemmes de « Tu préfères ? » (28 de base + 33 Extrême) : vérifié à
+/// Les 48 dilemmes de « Tu préfères ? » (19 de base + 29 Extrême) : vérifié à
 /// la compilation, relisible en diff de PR (spec §1.2).
 ///
 /// Les identifiants ne sont **jamais réattribués** : une carte retirée emporte
@@ -64,7 +64,22 @@ enum WouldYouRatherBank {
         // n'est pas un choix. Ce qui arrive vise le miroir, la figure du pack
         // Extrême validée par Arthur : les deux moitiés inversent les mêmes
         // éléments et coûtent exactement le même prix.
-        Dilemma(id: "wyr_065", a: "Chier dix fois par jour, trente secondes", b: "Chier une fois par semaine, mais trois heures")
+        Dilemma(id: "wyr_065", a: "Chier dix fois par jour, trente secondes", b: "Chier une fois par semaine, mais trois heures"),
+        // Vague du 20 août 2026, ecrite au registre des cartes qu'Arthur a
+        // gardees : permutation corporelle, substitution de matiere, chiffre.
+        // Le registre « pire moment social » en est absent, il l'a balaye.
+        Dilemma(id: "wyr_261", a: "Un nez à la place du nombril", b: "Un nombril à la place du nez"),
+        Dilemma(id: "wyr_262", a: "Transpirer par la langue", b: "Baver par les aisselles"),
+        Dilemma(id: "wyr_263", a: "Des poils à l'intérieur de la bouche", b: "Des dents au bout des doigts"),
+        Dilemma(id: "wyr_264", a: "Haleine de poubelle, dents parfaites", b: "Dents pourries, haleine de menthe"),
+        Dilemma(id: "wyr_265", a: "Des pets muets qui vident la pièce", b: "Des pets bruyants qui ne sentent rien"),
+        Dilemma(id: "wyr_266", a: "Que ta morve soit du fromage fondu", b: "Que ta salive soit du gel douche"),
+        Dilemma(id: "wyr_267", a: "Vomir des glaçons entiers", b: "Éternuer du sable brûlant"),
+        Dilemma(id: "wyr_268", a: "Tes doigts sentent le poisson à vie", b: "Ton haleine sent l'ail à vie"),
+        Dilemma(id: "wyr_269", a: "La peau râpeuse comme la langue d'un chat", b: "La langue gluante comme un escargot"),
+        Dilemma(id: "wyr_270", a: "Ne plus jamais péter, tout reste dedans", b: "Péter toutes les trente secondes, à vie"),
+        Dilemma(id: "wyr_271", a: "Un bouton minuscule chaque matin", b: "Un bouton gros comme un poing une fois par an"),
+        Dilemma(id: "wyr_272", a: "Une douche de dix secondes par jour", b: "Une douche de six heures une fois par mois")
     ]
 
     // MARK: Pack Extrême (18+)
@@ -87,7 +102,28 @@ enum WouldYouRatherBank {
         // référence de goût validée par Arthur, on y ajoute plus qu'on n'y
         // coupe. Les neuf qui arrivent sont toutes bâties sur le miroir ou sur
         // le chiffre, les deux ressorts de ses cartes préférées.
-        Dilemma(id: "wyr_067", a: "Crier le prénom de ton ex pendant l'amour", b: "Que l'autre crie celui de son ex")
+        Dilemma(id: "wyr_067", a: "Crier le prénom de ton ex pendant l'amour", b: "Que l'autre crie celui de son ex"),
+        // Vague du 20 août 2026 : les cinq ressorts, en version 18+.
+        Dilemma(id: "wyr_273", a: "Ton nez à la place de ton sexe", b: "Ton sexe à la place de ton nez"),
+        Dilemma(id: "wyr_274", a: "Un trou de balle à la place du nombril", b: "Un nombril à la place du trou de balle"),
+        Dilemma(id: "wyr_275", a: "Des yeux à la place des tétons", b: "Des tétons à la place des yeux"),
+        Dilemma(id: "wyr_276", a: "La peau de tes couilles sur tes coudes", b: "La peau de tes coudes sur tes couilles"),
+        Dilemma(id: "wyr_277", a: "Des poils de cul à la place des cheveux", b: "Des cheveux à la place des poils de cul"),
+        Dilemma(id: "wyr_278", a: "Que chaque orgasme te fasse péter", b: "Que chaque pet te fasse jouir"),
+        Dilemma(id: "wyr_279", a: "Que ta jouissance sonne comme un rot", b: "Que tes rots sonnent comme une jouissance"),
+        Dilemma(id: "wyr_280", a: "Que ta sueur soit du sperme", b: "Que tes larmes soient des règles"),
+        Dilemma(id: "wyr_281", a: "Éjaculer de la chantilly", b: "Mouiller du sirop d'érable"),
+        Dilemma(id: "wyr_282", a: "Pisser du champagne tiède", b: "Transpirer de la bière"),
+        Dilemma(id: "wyr_283", a: "Pisser brûlant comme du thé", b: "Chier des glaçons"),
+        Dilemma(id: "wyr_284", a: "Faire du fromage entre les orteils", b: "Faire du vinaigre sous les bras"),
+        Dilemma(id: "wyr_285", a: "Ne plus jamais jouir seul", b: "Ne plus jamais jouir à deux"),
+        Dilemma(id: "wyr_286", a: "Coucher une fois tous les dix ans", b: "Six fois par jour, sans jamais finir"),
+        Dilemma(id: "wyr_287", a: "Perdre dix cheveux à chaque orgasme", b: "Prendre cent grammes à chaque orgasme"),
+        Dilemma(id: "wyr_288", a: "Une gueule de bois de trois jours chaque mois", b: "Une petite gueule de bois tous les matins"),
+        Dilemma(id: "wyr_289", a: "Que ta mamie te raconte sa vie sexuelle", b: "Que tu lui racontes la tienne"),
+        Dilemma(id: "wyr_290", a: "Que ta mère voie tout ton historique porno", b: "Que tu voies tout le sien"),
+        Dilemma(id: "wyr_291", a: "Lire la note que chacun de tes ex t'a mise", b: "Qu'ils lisent celles que tu leur as mises"),
+        Dilemma(id: "wyr_292", a: "Trouver le groupe où ta famille parle de toi", b: "Qu'ils trouvent celui où tu parles d'eux")
     ]
 
     /// Le paquet effectivement joué : la base, plus l'Extrême si l'âge est
