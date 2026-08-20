@@ -528,7 +528,7 @@ final class WouldYouRatherTests: XCTestCase {
     // MARK: - Intégrité du contenu
 
     func testTheDeckHoldsTheBaseDilemmas() {
-        XCTAssertEqual(WouldYouRatherBank.all.count, 25)
+        XCTAssertEqual(WouldYouRatherBank.all.count, 28)
     }
 
     func testEveryIdentifierIsUniqueAndWellFormed() {
@@ -615,19 +615,45 @@ final class WouldYouRatherTests: XCTestCase {
 
     // MARK: - Pack Extrême (18+)
 
-    /// Le paquet de base reste à 25 : l'Extrême s'ajoute, il ne remplace pas.
+    /// L'Extrême s'ajoute au paquet de base, il ne le remplace pas.
     func testTheExtremePackStaysBehindTheAgeGate() {
-        XCTAssertEqual(WouldYouRatherBank.all.count, 25)
-        XCTAssertEqual(WouldYouRatherBank.extreme.count, 25)
+        XCTAssertEqual(WouldYouRatherBank.all.count, 28)
+        XCTAssertEqual(WouldYouRatherBank.extreme.count, 33)
 
-        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: false, extremeEnabled: true).count, 25,
+        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: false, extremeEnabled: true).count, 28,
                        "Sans confirmation d'âge, l'interrupteur seul ne suffit pas")
-        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: false).count, 25,
+        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: false).count, 28,
                        "L'âge confirmé n'active rien tant que la table n'a pas choisi")
-        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: true).count, 50)
+        XCTAssertEqual(WouldYouRatherBank.dilemmas(adultUnlocked: true, extremeEnabled: true).count, 61)
 
         let ids = Set(WouldYouRatherBank.extreme.map(\.id))
-        XCTAssertEqual(ids.count, 25, "Identifiants uniques")
+        XCTAssertEqual(ids.count, 33, "Identifiants uniques")
         XCTAssertTrue(WouldYouRatherBank.extreme.allSatisfy { $0.a.count <= 60 && $0.b.count <= 60 })
+    }
+
+    /// Un identifiant n'est jamais réattribué : une carte retirée emporte son
+    /// numéro, sinon la mémoire du paquet ferait ressortir aussitôt une carte
+    /// vue hier soir sous un texte neuf. Ce test interdit la renumérotation.
+    func testNoIdentifierIsEverReused() {
+        let tous = WouldYouRatherBank.all + WouldYouRatherBank.extreme
+        XCTAssertEqual(Set(tous.map(\.id)).count, tous.count, "Un numéro sert deux fois")
+
+        for paquet in [WouldYouRatherBank.all, WouldYouRatherBank.extreme] {
+            let numeros = paquet.compactMap { Int($0.id.dropFirst(4)) }
+            XCTAssertEqual(numeros.count, paquet.count, "Identifiant illisible dans le paquet")
+            XCTAssertEqual(numeros, numeros.sorted(), "Les cartes doivent rester en ordre de numéro")
+        }
+    }
+
+    /// Les deux paquets se jouent ensemble : une option écrite dans l'Extrême
+    /// ne doit pas déjà exister dans le paquet de base, sinon la même carte
+    /// ressort deux fois dans la même soirée.
+    func testTheTwoPacksNeverRepeatEachOther() {
+        var vues = Set<String>()
+        for card in WouldYouRatherBank.all + WouldYouRatherBank.extreme {
+            for text in [card.a, card.b] {
+                XCTAssertTrue(vues.insert(normalized(text)).inserted, "Option déjà écrite : \(text)")
+            }
+        }
     }
 }

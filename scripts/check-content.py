@@ -140,16 +140,32 @@ def run(which: str) -> bool:
             f"{REPO}/Mytho/Core/Games/WouldYouRather/WouldYouRatherContent.swift",
             encoding="utf-8",
         ).read()
-        raw = re.findall(
-            r'Dilemma\(id:\s*"(wyr_\d+)",\s*a:\s*"((?:[^"\\]|\\.)*)",\s*b:\s*"((?:[^"\\]|\\.)*)"\)',
-            src,
+        motif = (
+            r'Dilemma\(id:\s*"(wyr_\d+)",\s*a:\s*"((?:[^"\\]|\\.)*)",\s*b:\s*"((?:[^"\\]|\\.)*)"\)'
         )
-        entries = [(i, f"{a} / {b}") for i, a, b in raw]
+        # Le partage base / Extreme se lit sur les deux tableaux du code, et
+        # NON sur le numero d'identifiant : un numero n'est jamais reattribue,
+        # une carte retiree laisse donc un trou definitif dans la suite.
+        tete, queue = src.split("// MARK: Pack Extrême (18+)", 1)
+        raw_base = re.findall(motif, tete)
+        raw_adult = re.findall(motif, queue)
+        raw = raw_base + raw_adult
+        base = [(i, f"{a} / {b}") for i, a, b in raw_base]
+        adult = [(i, f"{a} / {b}") for i, a, b in raw_adult]
         options = [(i, a) for i, a, _ in raw] + [(i, b) for i, _, b in raw]
-        base = [e for e in entries if int(e[0][4:]) <= 25]
-        adult = [e for e in entries if int(e[0][4:]) > 25]
-        ok &= check("Tu préfères (base)", base, 25, "wyr_")
-        ok &= check("Tu préfères (Extrême 18+)", adult, 25, adult=True)
+        ok &= check("Tu préfères (base)", base, 28)
+        ok &= check("Tu préfères (Extrême 18+)", adult, 33, adult=True)
+        numeros = [int(i[4:]) for i, _, _ in raw]
+        if len(set(numeros)) != len(numeros):
+            print("  ECHEC identifiant reattribue : un numero sert deux fois")
+            ok = False
+        # Croissant a l'interieur de chaque paquet ; entre les deux, non : le
+        # paquet de base a recu les numeros les plus recents.
+        for nom, lot in (("base", raw_base), ("Extreme", raw_adult)):
+            suite = [int(i[4:]) for i, _, _ in lot]
+            if sorted(suite) != suite:
+                print(f"  ECHEC identifiants dans le desordre ({nom})")
+                ok = False
         too_long = [(i, len(t)) for i, t in options if len(t) > 60]
         if too_long:
             print(f"  ECHEC options > 60 : {too_long[:4]}")
