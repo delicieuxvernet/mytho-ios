@@ -168,8 +168,8 @@ def run(which: str) -> bool:
         base = [(i, f"{a} / {b}") for i, a, b in raw_base]
         adult = [(i, f"{a} / {b}") for i, a, b in raw_adult]
         options = [(i, a) for i, a, _ in raw] + [(i, b) for i, _, b in raw]
-        ok &= check("Tu préfères (base)", base, 7)
-        ok &= check("Tu préfères (Extrême 18+)", adult, 9, adult=True)
+        ok &= check("Tu préfères (base)", base, 19)
+        ok &= check("Tu préfères (Extrême 18+)", adult, 29, adult=True)
         numeros = [int(i[4:]) for i, _, _ in raw]
         if len(set(numeros)) != len(numeros):
             print("  ECHEC identifiant reattribue : un numero sert deux fois")
