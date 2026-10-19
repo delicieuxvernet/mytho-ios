@@ -161,4 +161,34 @@ final class AppSettingsTests: XCTestCase {
 
         XCTAssertEqual(settings.deckResetToken, 2)
     }
+
+    // MARK: Note sur l'App Store
+
+    /// La note se demande à la 3e partie terminée, une seule fois par version.
+    func testTheReviewIsAskedOnceAtTheThirdFinishedGame() {
+        let settings = makeSettings()
+
+        XCTAssertFalse(settings.recordFinishedGame(version: "2.0.0"))
+        XCTAssertFalse(settings.recordFinishedGame(version: "2.0.0"))
+        XCTAssertTrue(settings.recordFinishedGame(version: "2.0.0"), "3e partie : on demande")
+        XCTAssertFalse(settings.recordFinishedGame(version: "2.0.0"), "Déjà demandé pour cette version")
+        XCTAssertEqual(settings.finishedGames, 4)
+    }
+
+    /// Une nouvelle version a droit à sa propre demande, sans recompter.
+    func testANewVersionGetsItsOwnReviewRequest() {
+        let settings = makeSettings()
+        for _ in 0..<3 { _ = settings.recordFinishedGame(version: "2.0.0") }
+
+        XCTAssertTrue(settings.recordFinishedGame(version: "2.1.0"))
+        XCTAssertFalse(settings.recordFinishedGame(version: "2.1.0"))
+    }
+
+    /// Le compte survit au relancement de l'app.
+    func testFinishedGamesSurviveARelaunch() {
+        _ = makeSettings().recordFinishedGame(version: "2.0.0")
+        _ = makeSettings().recordFinishedGame(version: "2.0.0")
+
+        XCTAssertEqual(makeSettings().finishedGames, 2)
+    }
 }

@@ -118,6 +118,39 @@ final class AppSettings: ObservableObject {
         return true
     }
 
+    // MARK: Note sur l'App Store
+
+    /// La version affichée de l'app, telle que l'App Store la connaît.
+    static var currentVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+    }
+
+    /// Le nombre de parties qu'une soirée a menées jusqu'à leur écran de fin,
+    /// tous jeux confondus.
+    var finishedGames: Int { defaults.integer(forKey: SettingsKeys.finishedGames) }
+
+    /// À appeler sur chaque écran de fin de partie. Répond « vrai » une seule
+    /// fois par version, à partir de la 3e partie terminée : l'app a fait ses
+    /// preuves, la table vient de rire. iOS plafonne de toute façon à trois
+    /// demandes par an, et n'en montre aucune en TestFlight.
+    ///
+    /// Jamais pendant les captures automatisées : la fenêtre système
+    /// recouvrirait l'écran qu'on photographie.
+    func recordFinishedGame(version: String = AppSettings.currentVersion) -> Bool {
+        let count = finishedGames + 1
+        defaults.set(count, forKey: SettingsKeys.finishedGames)
+
+        guard !ProcessInfo.processInfo.arguments.contains("-uiTesting") else { return false }
+        guard count >= Self.gamesBeforeReview else { return false }
+        guard defaults.string(forKey: SettingsKeys.reviewAskedVersion) != version else { return false }
+
+        defaults.set(version, forKey: SettingsKeys.reviewAskedVersion)
+        return true
+    }
+
+    /// Trois parties : assez pour avoir un avis, pas assez pour s'en lasser.
+    static let gamesBeforeReview = 3
+
     // MARK: Paquets
 
     /// Purge la mémoire des cartes déjà vues, tous jeux confondus : c'est la
@@ -146,4 +179,6 @@ private enum SettingsKeys {
     static let haptics = "mytho.settings.haptics"
     static let reducedMotion = "mytho.settings.reducedMotion"
     static let adultContent = "mytho.settings.adultContent"
+    static let finishedGames = "mytho.review.finishedGames"
+    static let reviewAskedVersion = "mytho.review.askedVersion"
 }
