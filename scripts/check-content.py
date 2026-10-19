@@ -147,8 +147,8 @@ def run(which: str) -> bool:
         motif = r'MostLikelyCard\(id:\s*"(mst_\d+)",\s*text:\s*"((?:[^"\\]|\\.)*)"\)'
         base = re.findall(motif, tete)
         adult = re.findall(motif, queue)
-        ok &= check("Le plus susceptible (base)", base, 0, max_len=90)
-        ok &= check("Le plus susceptible (18+)", adult, 14, max_len=90, adult=True)
+        ok &= check("Le plus susceptible (base)", base, 90, max_len=90)
+        ok &= check("Le plus susceptible (18+)", adult, 67, max_len=90, adult=True)
         ok &= numeros_sains("mst", base, adult)
     if which in ("wyr", "all"):
         src = open(
