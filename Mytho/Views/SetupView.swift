@@ -5,9 +5,11 @@ struct SetupView: View {
     @Environment(\.skin) private var skin
 
     @EnvironmentObject private var session: GameSession
+    @EnvironmentObject private var settings: AppSettings
     @FocusState private var focusedField: Int?
     @State private var showAdvanced = false
     @State private var showRules = false
+    @State private var showAgeGate = false
 
     var body: some View {
         ScrollView {
@@ -16,6 +18,7 @@ struct SetupView: View {
                 playersPanel
                 compositionPanel
                 categoriesPanel
+                if let hot = WordBank.adultCategory { hotBanner(hot) }
                 advancedPanel
                 if session.totalScores.values.contains(where: { $0 > 0 }) {
                     leaderboardPanel
@@ -220,13 +223,13 @@ struct SetupView: View {
                         .font(Theme.heading(17))
                         .foregroundStyle(skin.ink)
                     Spacer()
-                    Text(session.config.categoryIDs.isEmpty ? "Tous" : "\(session.config.categoryIDs.count)")
+                    Text(themesLabel)
                         .font(Theme.caption(13))
                         .foregroundStyle(skin.inkMuted)
                 }
 
                 FlowLayout(spacing: 8) {
-                    ForEach(WordBank.categories) { category in
+                    ForEach(WordBank.publicCategories) { category in
                         CategoryChip(
                             category: category,
                             isOn: session.config.categoryIDs.isEmpty
@@ -241,18 +244,74 @@ struct SetupView: View {
         }
     }
 
+    private static var publicIDs: Set<String> { Set(WordBank.publicCategories.map(\.id)) }
+
+    private var themesLabel: String {
+        let ids = session.config.categoryIDs
+        guard !ids.isEmpty else { return "Tous" }
+        let chosen = ids.intersection(Self.publicIDs).count
+        return chosen == 0 ? "18+ seul" : "\(chosen)"
+    }
+
     private func toggle(_ category: WordCategory) {
         var ids = session.config.categoryIDs
-        // Vide signifie « toutes » : on matérialise la sélection avant de retirer.
-        if ids.isEmpty { ids = Set(WordBank.categories.map(\.id)) }
+        // Vide signifie « tous les thèmes tout public » : on matérialise la
+        // sélection avant de retirer.
+        if ids.isEmpty { ids = Self.publicIDs }
 
         if ids.contains(category.id) {
             ids.remove(category.id)
         } else {
             ids.insert(category.id)
         }
-        // Aucune catégorie sélectionnée n'aurait plus de mots : on repasse à toutes.
-        session.config.categoryIDs = ids.isEmpty || ids.count == WordBank.categories.count ? [] : ids
+        session.config.categoryIDs = normalized(ids)
+    }
+
+    /// « Tous » se stocke vide : rien de coché, ou tout coché, revient au même.
+    /// Le 18+ coché garde en revanche une sélection explicite — vide, il
+    /// sortirait de la pioche, puisque « Tous » ne le contient jamais.
+    private func normalized(_ ids: Set<String>) -> Set<String> {
+        let chosen = ids.intersection(Self.publicIDs)
+        guard !ids.contains(WordBank.hotID) else { return ids }
+        return chosen.isEmpty || chosen == Self.publicIDs ? [] : chosen
+    }
+
+    // MARK: Mots Hot (18+)
+
+    /// Coché ou non, d'après la sélection : la catégorie 18+ n'est jamais dans
+    /// « Tous », il faut l'ajouter explicitement.
+    private var hotBinding: Binding<Bool> {
+        Binding(
+            get: { session.config.categoryIDs.contains(WordBank.hotID) },
+            set: { isOn in
+                var ids = session.config.categoryIDs
+                if ids.isEmpty { ids = Self.publicIDs }
+                if isOn { ids.insert(WordBank.hotID) } else { ids.remove(WordBank.hotID) }
+                withAnimation(Theme.snap) { session.config.categoryIDs = normalized(ids) }
+            }
+        )
+    }
+
+    /// Même bandeau rose et même porte d'âge que les paquets 18+ des trois
+    /// autres jeux : l'app n'a qu'une seule façon d'ouvrir le contenu adulte.
+    private func hotBanner(_ hot: WordCategory) -> some View {
+        AdultPackBanner(
+            title: "Mots Hot · 18+",
+            subtitle: "\(hot.pairs.count) paires crues, pour les tables sans filtre.",
+            unlocked: settings.adultContentUnlocked,
+            isOn: hotBinding,
+            onUnlock: { showAgeGate = true }
+        )
+        .alert("Réservé aux adultes", isPresented: $showAgeGate) {
+            Button("J'ai 18 ans ou plus") {
+                if settings.setAdultContent(true, ageConfirmed: true) {
+                    hotBinding.wrappedValue = true
+                }
+            }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("Ces mots contiennent des thèmes sexuels crus.")
+        }
     }
 
     private var advancedPanel: some View {

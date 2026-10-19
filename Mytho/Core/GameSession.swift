@@ -18,6 +18,11 @@ final class GameSession: ObservableObject {
         didSet { Persistence.save(scores: totalScores) }
     }
 
+    /// Reflet de la confirmation d'âge des réglages globaux, tenu à jour par
+    /// `RootView`. Non persisté ici : `AppSettings` en est la seule source.
+    /// Sans lui, la catégorie de mots 18+ ne sort jamais, même cochée.
+    var adultContentUnlocked = false
+
     // MARK: Manche en cours
 
     @Published var engine: GameEngine?
@@ -158,7 +163,11 @@ final class GameSession: ObservableObject {
             roundConfig.mrWhiteCount = clamped.mrWhite
         }
 
-        let pair = WordBank.randomPair(from: config.categoryIDs, excluding: recentPairs)
+        let pair = WordBank.randomPair(
+            from: config.categoryIDs,
+            excluding: recentPairs,
+            adultUnlocked: adultContentUnlocked
+        )
         recentPairs.append(pair)
         if recentPairs.count > recentPairMemory { recentPairs.removeFirst() }
 

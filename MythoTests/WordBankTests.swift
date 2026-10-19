@@ -5,9 +5,8 @@ import XCTest
 /// (doublon, mot vide, paire identique) avant qu'elles n'arrivent en partie.
 final class WordBankTests: XCTestCase {
 
-    /// Depuis l'écrémage du 17 août, la banque assume d'être petite : peu de
-    /// paires, que des essentielles. Le tirage par défaut pioche dans toutes
-    /// les catégories à la fois, la variété vient du total, pas de chacune.
+    /// Chaque thème doit tenir une partie : en dessous de cinq paires, autant
+    /// le fusionner avec un autre.
     func testEveryCategoryHasEnoughPairs() {
         XCTAssertFalse(WordBank.categories.isEmpty)
         for category in WordBank.categories {
@@ -66,6 +65,43 @@ final class WordBankTests: XCTestCase {
 
         for _ in 0..<50 {
             XCTAssertEqual(WordBank.randomPair(from: [category.id], excluding: recent), expected)
+        }
+    }
+
+    // MARK: - Catégorie 18+
+
+    func testThereIsExactlyOneAdultCategoryAndItIsNotFirst() {
+        XCTAssertEqual(WordBank.categories.filter(\.isAdult).count, 1)
+        XCTAssertEqual(WordBank.adultCategory?.id, WordBank.hotID)
+        XCTAssertFalse(WordBank.categories[0].isAdult, "La première catégorie sert de défaut : tout public")
+        XCTAssertFalse(WordBank.publicCategories.contains { $0.isAdult })
+    }
+
+    /// « Tous » veut dire tous les thèmes tout public : jamais le 18+, même
+    /// une fois l'âge confirmé. Il faut le cocher.
+    func testAllNeverIncludesTheAdultCategory() {
+        let hot = Set(WordBank.adultCategory?.pairs ?? [])
+        for _ in 0..<300 {
+            XCTAssertFalse(hot.contains(WordBank.randomPair(from: [], adultUnlocked: true)))
+        }
+    }
+
+    /// Cochée mais verrou fermé (réglage sauvegardé, âge refermé depuis) : la
+    /// catégorie 18+ ne sort pas, la pioche retombe sur le tout public.
+    func testTheAdultCategoryStaysLockedWithoutTheAgeGate() {
+        let hot = Set(WordBank.adultCategory?.pairs ?? [])
+        let publicPairs = Set(WordBank.publicPairs)
+        for _ in 0..<300 {
+            let pair = WordBank.randomPair(from: [WordBank.hotID], adultUnlocked: false)
+            XCTAssertFalse(hot.contains(pair))
+            XCTAssertTrue(publicPairs.contains(pair))
+        }
+    }
+
+    func testTheAdultCategoryPlaysOnceCheckedAndUnlocked() {
+        let hot = Set(WordBank.adultCategory?.pairs ?? [])
+        for _ in 0..<100 {
+            XCTAssertTrue(hot.contains(WordBank.randomPair(from: [WordBank.hotID], adultUnlocked: true)))
         }
     }
 

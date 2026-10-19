@@ -192,7 +192,7 @@ def run(which: str) -> bool:
         pairs = [(f"p{n:03d}", f"{a} / {b}") for n, (a, b) in enumerate(raw, 1)]
         # L'app est classee 17+ et la categorie « Soiree » assume l'alcool
         # (choix produit du 17 aout) : seules les lignes rouges 18+ s'appliquent.
-        ok &= check("WordBank (paires)", pairs, 60, adult=True)
+        ok &= check("WordBank (paires)", pairs, 154, adult=True)
         words = {}
         for a, b in raw:
             for w in (a, b):

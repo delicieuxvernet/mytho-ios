@@ -41,6 +41,9 @@ struct RootView: View {
                     gameScreen(for: engine)
                 } else if selectedGameID == GameRegistry.undercoverID {
                     SetupView()
+                        // La catégorie de mots 18+ se déverrouille avec la même
+                        // confirmation d'âge que les paquets des autres jeux.
+                        .environmentObject(settings)
                         .transition(.forward)
                 } else if let partyGame = partyGame {
                     // Les jeux de la soirée ont leur propre empilement : prénoms,
@@ -111,6 +114,11 @@ struct RootView: View {
         // carte resterait ouverte par-dessus l'écran des réglages.
         .onChange(of: session.canPeekCards) { _, canPeek in
             if !canPeek { peeking = false }
+        }
+        // Le tirage des mots d'Undercover lit la confirmation d'âge au moment
+        // de distribuer : la session en garde un reflet toujours à jour.
+        .onChange(of: settings.adultContentUnlocked, initial: true) { _, unlocked in
+            session.adultContentUnlocked = unlocked
         }
         .statusBarHidden(session.engine != nil)
         .persistentSystemOverlays(session.engine != nil ? .hidden : .automatic)
