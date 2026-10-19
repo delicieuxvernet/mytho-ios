@@ -37,6 +37,8 @@ struct MostLikelyView: View {
     /// Pilote le remplissage des barres et l'apparition du prénom gagnant.
     @State private var resultRevealed = false
     @State private var confettiStart: Date?
+    /// « Retour » ressort par la droite, d'où l'écran était venu.
+    @State private var direction: NavDirection = .forward
 
     // MARK: Corps
 
@@ -616,7 +618,7 @@ struct MostLikelyView: View {
             .padding(.bottom, 6)
 
             if let confettiStart {
-                MostLikelyConfetti(start: confettiStart)
+                ConfettiBurst(start: confettiStart)
             }
         }
         .accessibilityIdentifier("most-likely-standings")
@@ -857,7 +859,7 @@ struct MostLikelyView: View {
             return {
                 picks = []
                 allowsTie = false
-                withAnimation(screenAnimation) { self.engine = cardSnapshot }
+                navigateBack(direction: $direction, animation: screenAnimation) { self.engine = cardSnapshot }
             }
         case .card, .pass, .ballot, .result, .finished:
             return nil
@@ -995,7 +997,7 @@ struct MostLikelyView: View {
         guard !reduceMotion else { return }
 
         confettiStart = Date()
-        try? await Task.sleep(nanoseconds: UInt64(MostLikelyConfetti.duration * 1_000_000_000))
+        try? await Task.sleep(nanoseconds: UInt64(ConfettiBurst.duration * 1_000_000_000))
         confettiStart = nil
     }
 
@@ -1051,7 +1053,7 @@ struct MostLikelyView: View {
     }
 
     private var transition: AnyTransition {
-        reduceMotion ? .opacity : .forward
+        .screen(direction, reduced: reduceMotion)
     }
 
     private var countdownTransition: AnyTransition {
@@ -1118,74 +1120,6 @@ private struct ChipRow: View {
                 .accessibilityAddTraits(index == selection ? .isSelected : [])
             }
         }
-    }
-}
-
-// MARK: - Confettis
-
-/// 40 particules dessinées dans un `Canvas`, 1,6 s, aucune bibliothèque
-/// (spec §3.4). Contours encrés comme le reste de l'app : des confettis flous
-/// trahiraient la direction artistique.
-private struct MostLikelyConfetti: View {
-    @Environment(\.skin) private var skin
-
-    static let duration: TimeInterval = 1.6
-    static let count = 40
-
-    let start: Date
-
-    private let flakes: [Flake] = (0..<MostLikelyConfetti.count).map { _ in Flake() }
-
-    struct Flake {
-        let column = Double.random(in: 0.04...0.96)
-        let drift = Double.random(in: -34...34)
-        let delay = Double.random(in: 0...0.35)
-        let size = Double.random(in: 8...15)
-        let spin = Double.random(in: 0...(2 * Double.pi))
-        let turns = Double.random(in: 1.5...4)
-        let color = [Theme.amber, Theme.brand, Theme.brandLight, Theme.mint, Theme.sky, Theme.crimson]
-            .randomElement() ?? Theme.amber
-    }
-
-    var body: some View {
-        TimelineView(.animation) { timeline in
-            Canvas { context, size in
-                let elapsed = timeline.date.timeIntervalSince(start)
-                // Tout est calculé en `Double` puis converti une fois : mélanger
-                // `CGFloat` et `Double` dans une même expression fait ramer le
-                // vérificateur de types pour rien.
-                let width = Double(size.width)
-                let height = Double(size.height)
-
-                for flake in flakes {
-                    let span = Self.duration - flake.delay
-                    guard span > 0 else { continue }
-                    let progress = (elapsed - flake.delay) / span
-                    guard progress > 0, progress < 1 else { continue }
-
-                    let sway = sin(progress * 6 + flake.spin) * flake.drift
-                    let x = flake.column * width + sway
-                    let y = -20 + progress * (height + 40)
-                    let angle = flake.spin + progress * flake.turns * 2 * Double.pi
-
-                    let rect = CGRect(
-                        x: -flake.size / 2,
-                        y: -flake.size / 4,
-                        width: flake.size,
-                        height: flake.size / 2
-                    )
-                    let transform = CGAffineTransform(translationX: CGFloat(x), y: CGFloat(y))
-                        .rotated(by: CGFloat(angle))
-                    let path = Path(roundedRect: rect, cornerRadius: 1.5).applying(transform)
-
-                    context.fill(path, with: .color(flake.color))
-                    context.stroke(path, with: .color(skin.outline), lineWidth: 1)
-                }
-            }
-        }
-        .allowsHitTesting(false)
-        .ignoresSafeArea()
-        .accessibilityHidden(true)
     }
 }
 

@@ -54,6 +54,8 @@ struct WouldYouRatherView: View {
 
     // MARK: Animations d'écran
 
+    /// « Retour » ressort par la droite, d'où l'écran était venu.
+    @State private var direction: NavDirection = .forward
     @State private var halvesEntered = false
     @State private var orPulsing = false
     @State private var barsFilled = false
@@ -115,7 +117,7 @@ struct WouldYouRatherView: View {
 
     /// Les déplacements deviennent des fondus quand les animations sont
     /// réduites (spec §2.8).
-    private var screenTransition: AnyTransition { reduced ? .opacity : .forward }
+    private var screenTransition: AnyTransition { .screen(direction, reduced: reduced) }
 
     private var revealTransition: AnyTransition { reduced ? .opacity : .reveal }
 
@@ -147,7 +149,7 @@ struct WouldYouRatherView: View {
             return nil
 
         case .roster:
-            return { withAnimation(motion) { step = .setup } }
+            return { navigateBack(direction: $direction, animation: motion) { step = .setup } }
 
         case .dilemma:
             // Celui qui tient l'appareil n'a pas encore voté : lui rendre son
@@ -161,7 +163,7 @@ struct WouldYouRatherView: View {
                   engine?.votes[voter] == nil,
                   advanceToken == nil
             else { return nil }
-            return { withAnimation(motion) { step = .pass(voter) } }
+            return { navigateBack(direction: $direction, animation: motion) { step = .pass(voter) } }
 
         case .split:
             // Rien : le comptage à main levée se reprend par « Corriger le
@@ -173,7 +175,7 @@ struct WouldYouRatherView: View {
         case .survivors:
             // La répartition reste en mémoire tant que la carte n'a pas tourné :
             // y revenir ne coûte rien et ne rejoue aucune élimination.
-            return { withAnimation(motion) { step = .split } }
+            return { navigateBack(direction: $direction, animation: motion) { step = .split } }
         }
     }
 
@@ -431,7 +433,9 @@ struct WouldYouRatherView: View {
             minimumPlayers: max(mode.minimumPlayers, RosterStore.minPlayers),
             startTitle: "Enregistrer"
         ) {
-            withAnimation(motion) { step = .setup }
+            // « Enregistrer » ramène aux réglages : c'est un retour, il glisse
+            // dans le sens du retour.
+            navigateBack(direction: $direction, animation: motion) { step = .setup }
         }
     }
 
@@ -538,6 +542,9 @@ struct WouldYouRatherView: View {
                                     .fill(ink(for: side).opacity(0.14))
                                     .overlay(Capsule().strokeBorder(ink(for: side), lineWidth: 2))
                             )
+                            // Chaque voix comptée fait sursauter le compteur :
+                            // la table voit le tap arriver sans lire le chiffre.
+                            .popOnChange(of: openCount(side), reduced: reduced)
                     }
                 }
                 .padding(.horizontal, 26)
@@ -547,7 +554,7 @@ struct WouldYouRatherView: View {
             .frame(height: max(height, 0))
             .contentShape(Rectangle())
         }
-        .buttonStyle(PressedStyle())
+        .buttonStyle(HalfPressStyle())
         // La moitié écartée se désature, elle ne disparaît pas : le texte doit
         // rester lisible pendant qu'on commente le choix.
         .saturation(emphasis == nil || emphasis == side ? 1 : 0.35)
@@ -1034,7 +1041,13 @@ struct WouldYouRatherView: View {
         }
         .padding(.horizontal, Theme.gutter)
         .safeAreaInset(edge: .bottom) { resultsBar }
-        .onAppear { roster.endRound() }
+        // La fin de partie se fête, comme dans les autres jeux. Rien en
+        // animations réduites.
+        .confettiBurst(trigger: current.cardsPlayed, enabled: !reduced)
+        .onAppear {
+            roster.endRound()
+            Haptics.success()
+        }
     }
 
     private func playedLabel(_ current: WouldYouRatherEngine) -> String {
@@ -1410,6 +1423,28 @@ struct WouldYouRatherView: View {
         try? await Task.sleep(nanoseconds: UInt64(total * 1_000_000_000))
         guard !Task.isCancelled else { return }
         withAnimation(.easeOut(duration: 0.25)) { eliminationSettled = true }
+    }
+}
+
+// MARK: - Appui sur une moitié
+
+/// L'appui sur une moitié : un voile d'encre passe sur l'aplat, au toucher et
+/// non au relâcher. Le cadre ne bouge pas : il touche le trait du milieu et le
+/// « ou », et l'enfoncer de 3 pt comme les autres boutons ouvrait un jour
+/// entre les deux moitiés.
+private struct HalfPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .overlay {
+                Theme.nightDeep
+                    .opacity(configuration.isPressed ? 0.14 : 0)
+                    .allowsHitTesting(false)
+            }
+            // Asymétrique : le voile arrive tout de suite, repart en douceur.
+            .animation(
+                .easeOut(duration: configuration.isPressed ? 0.06 : 0.22),
+                value: configuration.isPressed
+            )
     }
 }
 

@@ -9,6 +9,7 @@ struct ResultView: View {
     let engine: GameEngine
     let outcome: RoundOutcome
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
     var body: some View {
@@ -16,9 +17,11 @@ struct ResultView: View {
             ScrollView {
                 VStack(spacing: 18) {
                     banner
-                    wordsPanel
-                    rolesPanel
-                    leaderboardPanel
+                    // Le bandeau d'abord, puis le reste en cascade : on lit qui
+                    // a gagné avant de lire comment.
+                    wordsPanel.cascade(index: 2, appeared: appeared, reduced: reduceMotion)
+                    rolesPanel.cascade(index: 3, appeared: appeared, reduced: reduceMotion)
+                    leaderboardPanel.cascade(index: 4, appeared: appeared, reduced: reduceMotion)
                     Color.clear.frame(height: 8)
                 }
                 .padding(.horizontal, Theme.gutter)
@@ -36,9 +39,12 @@ struct ResultView: View {
             .padding(.horizontal, Theme.gutter)
             .padding(.bottom, 12)
         }
+        // La fin de manche est le moment rare du jeu : c'est là que la fête se
+        // mérite, jamais sur un geste ordinaire.
+        .confettiBurst(trigger: outcome.title, enabled: !reduceMotion)
         .onAppear {
             Haptics.success()
-            withAnimation(Theme.flip.delay(0.05)) { appeared = true }
+            withAnimation(Theme.pop.delay(0.05)) { appeared = true }
         }
     }
 
@@ -93,7 +99,9 @@ struct ResultView: View {
                         .foregroundStyle(accent)
                 }
             }
-            .scaleEffect(appeared ? 1 : 0.5)
+            // Rien n'apparaît à partir de presque rien : 0,85 et un ressort qui
+            // rebondit, pas un zoom depuis la moitié de sa taille.
+            .scaleEffect(appeared ? 1 : 0.85)
 
             Text(outcome.title)
                 .font(Theme.title(30))

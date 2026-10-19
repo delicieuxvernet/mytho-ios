@@ -149,7 +149,7 @@ struct DealView: View {
         Haptics.impact(.rigid)
         // L'animation enveloppe la mutation du moteur : c'est elle qui fait
         // basculer `step`, désormais dérivé.
-        withAnimation(Theme.flip) { session.pickCard(at: index) }
+        withAnimation(Theme.flip) { _ = session.pickCard(at: index) }
     }
 
     // MARK: Révélation
@@ -248,6 +248,7 @@ struct WordCard: View {
     var cardIndex: Int?
     var namespace: Namespace.ID?
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var flipped = false
 
     var body: some View {
@@ -263,17 +264,17 @@ struct WordCard: View {
         }
     }
 
+    /// La carte part de dos (-180°) et pivote jusqu'à sa face. `FlipCard`
+    /// change de face exactement à 90° : plus de dos et de mot superposés à
+    /// mi-course. En animations réduites, elle ne tourne pas : la face est là,
+    /// et l'écran qui la porte apparaît en fondu.
     private var card: some View {
-        ZStack {
-            back.opacity(flipped ? 0 : 1)
-            front.opacity(flipped ? 1 : 0)
+        FlipCard(angle: flipped || reduceMotion ? 0 : -180) {
+            front
+        } back: {
+            back
         }
         .aspectRatio(Theme.cardRatio, contentMode: .fit)
-        .rotation3DEffect(
-            .degrees(flipped ? 0 : -180),
-            axis: (x: 0, y: 1, z: 0),
-            perspective: 0.45
-        )
     }
 
     private var back: some View {
@@ -288,8 +289,6 @@ struct WordCard: View {
                     .font(.system(size: 44, weight: .black, design: .rounded))
                     .foregroundStyle(.white.opacity(0.9))
             )
-            // Sans ce miroir, la face arrière apparaîtrait inversée pendant la bascule.
-            .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
     }
 
     private var front: some View {

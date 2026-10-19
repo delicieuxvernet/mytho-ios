@@ -119,9 +119,19 @@ enum Theme {
 
     // MARK: Animations
 
-    static let spring = Animation.spring(response: 0.42, dampingFraction: 0.82)
+    /// Changements d'écran et apparitions. Presque critique (amorti 0,9) :
+    /// un écran entier qui dépasse sa place puis revient se lit comme un
+    /// tremblement. Le rebond se réserve aux gestes qui portent de l'élan.
+    static let spring = Animation.spring(response: 0.38, dampingFraction: 0.9)
+    /// Retours tactiles : appui, sélection, incrément. Vif et un peu élastique,
+    /// c'est le caractère « jeu de société » de l'app.
     static let snap = Animation.spring(response: 0.28, dampingFraction: 0.75)
-    static let flip = Animation.spring(response: 0.55, dampingFraction: 0.78)
+    /// Retournements et révélations. Assez amorti pour qu'une carte retournée
+    /// ne vacille pas en se posant.
+    static let flip = Animation.spring(response: 0.55, dampingFraction: 0.84)
+    /// Fêtes : un vainqueur, un score qui tombe. Le seul ressort franchement
+    /// rebondissant, réservé aux moments rares.
+    static let pop = Animation.spring(response: 0.34, dampingFraction: 0.62)
 }
 
 // MARK: - Les deux peaux
@@ -205,25 +215,35 @@ extension EnvironmentValues {
 enum Haptics {
     private static let selection = UISelectionFeedbackGenerator()
 
+    /// Tenu à jour par `AppSettings` : coupé, plus aucune vibration ne part,
+    /// d'aucun jeu. Une vibration qu'on ne peut pas couper finit par faire
+    /// désinstaller l'app.
+    nonisolated(unsafe) static var isEnabled = true
+
     /// À appeler juste avant une salve d'appuis : sans ça, la première vibration
     /// arrive avec un retard perceptible.
     static func prepare() {
+        guard isEnabled else { return }
         selection.prepare()
     }
 
     static func tap() {
+        guard isEnabled else { return }
         selection.selectionChanged()
     }
 
     static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
+        guard isEnabled else { return }
         UIImpactFeedbackGenerator(style: style).impactOccurred()
     }
 
     static func success() {
+        guard isEnabled else { return }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
     static func warning() {
+        guard isEnabled else { return }
         UINotificationFeedbackGenerator().notificationOccurred(.warning)
     }
 }
