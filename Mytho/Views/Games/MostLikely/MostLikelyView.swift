@@ -160,9 +160,9 @@ struct MostLikelyView: View {
 
     @ViewBuilder
     private var packsPanel: some View {
-        // Panneau escamoté quand il n'y a rien à cocher : depuis l'écrémage du
-        // 20 août il n'existe plus de paquet tout public, et un cadre
-        // « Paquets » vide ne dit rien à personne.
+        // Panneau escamoté s'il n'y a rien à cocher : un cadre « Paquets » vide
+        // ne dit rien à personne. Le cas s'est produit entre l'écrémage du
+        // 20 août et la 2.0, quand le paquet tout public était vide.
         if !publicPacks.isEmpty {
             Panel {
                 VStack(alignment: .leading, spacing: 12) {

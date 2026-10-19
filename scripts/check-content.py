@@ -135,8 +135,8 @@ def run(which: str) -> bool:
         motif = r'card\((\d+),\s*"((?:[^"\\]|\\.)*)"\)'
         base = [(f"nhie_{int(n):03d}", t) for n, t in re.findall(motif, tete)]
         adult = [(f"nhie_{int(n):03d}", t) for n, t in re.findall(motif, queue)]
-        ok &= check("Je n'ai jamais (base)", base, 5, max_len=70)
-        ok &= check("Je n'ai jamais (18+)", adult, 19, max_len=70, adult=True)
+        ok &= check("Je n'ai jamais (base)", base, 101, max_len=70)
+        ok &= check("Je n'ai jamais (18+)", adult, 74, max_len=70, adult=True)
         ok &= numeros_sains("nhie", base, adult)
     if which in ("ml", "all"):
         src = open(
@@ -147,8 +147,8 @@ def run(which: str) -> bool:
         motif = r'MostLikelyCard\(id:\s*"(mst_\d+)",\s*text:\s*"((?:[^"\\]|\\.)*)"\)'
         base = re.findall(motif, tete)
         adult = re.findall(motif, queue)
-        ok &= check("Le plus susceptible (base)", base, 0, max_len=90)
-        ok &= check("Le plus susceptible (18+)", adult, 14, max_len=90, adult=True)
+        ok &= check("Le plus susceptible (base)", base, 90, max_len=90)
+        ok &= check("Le plus susceptible (18+)", adult, 67, max_len=90, adult=True)
         ok &= numeros_sains("mst", base, adult)
     if which in ("wyr", "all"):
         src = open(
@@ -168,8 +168,8 @@ def run(which: str) -> bool:
         base = [(i, f"{a} / {b}") for i, a, b in raw_base]
         adult = [(i, f"{a} / {b}") for i, a, b in raw_adult]
         options = [(i, a) for i, a, _ in raw] + [(i, b) for i, _, b in raw]
-        ok &= check("Tu préfères (base)", base, 17)
-        ok &= check("Tu préfères (Extrême 18+)", adult, 24, adult=True)
+        ok &= check("Tu préfères (base)", base, 112)
+        ok &= check("Tu préfères (Extrême 18+)", adult, 73, adult=True)
         numeros = [int(i[4:]) for i, _, _ in raw]
         if len(set(numeros)) != len(numeros):
             print("  ECHEC identifiant reattribue : un numero sert deux fois")
@@ -192,7 +192,7 @@ def run(which: str) -> bool:
         pairs = [(f"p{n:03d}", f"{a} / {b}") for n, (a, b) in enumerate(raw, 1)]
         # L'app est classee 17+ et la categorie « Soiree » assume l'alcool
         # (choix produit du 17 aout) : seules les lignes rouges 18+ s'appliquent.
-        ok &= check("WordBank (paires)", pairs, 60, adult=True)
+        ok &= check("WordBank (paires)", pairs, 154, adult=True)
         words = {}
         for a, b in raw:
             for w in (a, b):
