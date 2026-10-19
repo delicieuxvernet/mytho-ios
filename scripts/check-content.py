@@ -135,8 +135,8 @@ def run(which: str) -> bool:
         motif = r'card\((\d+),\s*"((?:[^"\\]|\\.)*)"\)'
         base = [(f"nhie_{int(n):03d}", t) for n, t in re.findall(motif, tete)]
         adult = [(f"nhie_{int(n):03d}", t) for n, t in re.findall(motif, queue)]
-        ok &= check("Je n'ai jamais (base)", base, 5, max_len=70)
-        ok &= check("Je n'ai jamais (18+)", adult, 19, max_len=70, adult=True)
+        ok &= check("Je n'ai jamais (base)", base, 101, max_len=70)
+        ok &= check("Je n'ai jamais (18+)", adult, 74, max_len=70, adult=True)
         ok &= numeros_sains("nhie", base, adult)
     if which in ("ml", "all"):
         src = open(
