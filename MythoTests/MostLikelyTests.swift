@@ -571,9 +571,13 @@ final class MostLikelyTests: XCTestCase {
             "Une sélection vide retombe sur le paquet tout public"
         )
 
+        // Les réglages par défaut (paquet tout public, verrou fermé), en partie
+        // sans fin : la limite de 12 manches couperait la boucle avant 30.
+        var reglages = MostLikelyEngine.Options()
+        reglages.limit = .endless
         let players = table(4)
         var engine = try XCTUnwrap(
-            makeEngine(players, options: MostLikelyEngine.Options()),
+            makeEngine(players, options: reglages),
             "Les réglages par défaut suffisent à lancer une partie"
         )
         let publiques = Set(MostLikelyPack.potes.cards.map(\.id))
