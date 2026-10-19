@@ -41,7 +41,10 @@ final class AppSettings: ObservableObject {
     }
 
     @Published var hapticsEnabled: Bool {
-        didSet { defaults.set(hapticsEnabled, forKey: SettingsKeys.haptics) }
+        didSet {
+            defaults.set(hapticsEnabled, forKey: SettingsKeys.haptics)
+            Haptics.isEnabled = hapticsEnabled
+        }
     }
 
     @Published var reducedMotion: ReducedMotionSetting {
@@ -82,6 +85,10 @@ final class AppSettings: ObservableObject {
         } else {
             self.reducedMotion = .system
         }
+
+        // `didSet` ne joue pas pendant l'initialisation : le réglage lu sur le
+        // disque doit atteindre les vibrations dès le lancement.
+        Haptics.isEnabled = hapticsEnabled
     }
 
     // MARK: Animations

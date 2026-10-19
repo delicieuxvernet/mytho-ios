@@ -61,6 +61,9 @@ struct PassPhoneView: View {
                 Image(systemName: "iphone.gen3.radiowaves.left.and.right")
                     .font(.system(size: 40, weight: .light))
                     .foregroundStyle(Theme.brandLight)
+                    // Le téléphone sursaute au moment où il vibre dans la main
+                    // du nouveau porteur : le geste et l'image disent la même chose.
+                    .symbolEffect(.bounce, value: appeared)
                     .accessibilityHidden(true)
 
                 nameCard

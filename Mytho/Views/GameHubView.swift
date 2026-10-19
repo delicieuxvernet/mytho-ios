@@ -6,8 +6,13 @@ import SwiftUI
 struct GameHubView: View {
     @Environment(\.skin) private var skin
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let onSelect: (GameEntry) -> Void
+
+    /// L'accueil se voit une fois par soirée et à chaque retour de jeu : il a
+    /// droit à une entrée, en cascade, que rien n'attend pour être touché.
+    @State private var appeared = false
 
     private var columns: [GridItem] {
         // Aux tailles d'accessibilité, deux colonnes tronquent les titres longs
@@ -22,8 +27,9 @@ struct GameHubView: View {
                 header
 
                 LazyVGrid(columns: columns, spacing: 12) {
-                    ForEach(GameRegistry.all) { game in
+                    ForEach(Array(GameRegistry.all.enumerated()), id: \.element.id) { index, game in
                         GameTile(game: game) { onSelect(game) }
+                            .cascade(index: index, appeared: appeared, reduced: reduceMotion)
                     }
                 }
 
@@ -32,6 +38,7 @@ struct GameHubView: View {
             .padding(.horizontal, Theme.gutter)
             .padding(.top, 8)
         }
+        .onAppear { appeared = true }
     }
 
     private var header: some View {

@@ -34,6 +34,8 @@ struct NeverHaveIEverView: View {
     // et le bandeau Épicé se présente à égalité de geste avec le reste.
     @State private var packIDs: Set<String> = []
     @State private var showAgeGate = false
+    /// « Retour » ressort par la droite, d'où l'écran était venu.
+    @State private var direction: NavDirection = .forward
 
     var body: some View {
         ZStack {
@@ -73,7 +75,7 @@ struct NeverHaveIEverView: View {
     }
 
     private var screenTransition: AnyTransition {
-        reduceMotion ? .opacity : .forward
+        .screen(direction, reduced: reduceMotion)
     }
 
     private var revealTransition: AnyTransition {
@@ -108,7 +110,7 @@ struct NeverHaveIEverView: View {
     /// ce tour », qui dit, lui, ce qu'il restitue.
     private var backStep: (() -> Void)? {
         guard let game = engine, game.phase == .card, game.cardNumber <= 1 else { return nil }
-        return { returnToSetup() }
+        return { navigateBack(direction: $direction, animation: motion) { returnToSetup() } }
     }
 
     /// Vrai dès qu'une manche est engagée : le téléphone tourne autour de la
@@ -872,12 +874,10 @@ struct NeverHaveIEverView: View {
             }
             .padding(.horizontal, Theme.gutter)
             .padding(.top, 10)
-
-            // Pas de confettis en mouvement réduit (§5.4).
-            if !reduceMotion {
-                ConfettiLayer()
-            }
         }
+        // Les confettis communs à tous les jeux. Pas de confettis en mouvement
+        // réduit (§5.4).
+        .confettiBurst(trigger: game.cardNumber, enabled: !reduceMotion)
         .onAppear {
             roster.endRound()
             Haptics.success()
@@ -1272,71 +1272,6 @@ private struct ChoiceRow<Value: Hashable>: View {
         .buttonStyle(PressedStyle())
         .accessibilityLabel(label(option))
         .accessibilityAddTraits(isOn ? AccessibilityTraits.isSelected : [])
-    }
-}
-
-// MARK: - Confettis
-
-/// Quarante papiers qui tombent, 1,6 s, faits main : aucune bibliothèque, et
-/// aucune boucle infinie — l'animation se termine d'elle-même.
-private struct ConfettiLayer: View {
-
-    private struct Flake: Identifiable {
-        let id: Int
-        /// Position horizontale de départ, de 0 à 1.
-        let start: Double
-        let delay: Double
-        let duration: Double
-        let drift: Double
-        let size: Double
-        let spin: Double
-        let color: Color
-    }
-
-    @State private var flakes = ConfettiLayer.makeFlakes()
-    @State private var fallen = false
-
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .top) {
-                ForEach(flakes) { flake in
-                    RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                        .fill(flake.color)
-                        .frame(width: flake.size, height: flake.size * 0.5)
-                        .rotationEffect(.degrees(fallen ? flake.spin : 0))
-                        .offset(
-                            x: proxy.size.width * (flake.start - 0.5) + (fallen ? flake.drift : 0),
-                            y: fallen ? proxy.size.height + 40 : -40
-                        )
-                        .opacity(fallen ? 0 : 1)
-                        .animation(
-                            .easeIn(duration: flake.duration).delay(flake.delay),
-                            value: fallen
-                        )
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-        .onAppear { fallen = true }
-    }
-
-    private static func makeFlakes() -> [Flake] {
-        (0..<40).map { index in
-            Flake(
-                id: index,
-                start: Double.random(in: 0.02...0.98),
-                // Le dernier papier part à 0,4 s et tombe en 1,2 s : 1,6 s au
-                // total, la durée annoncée par la spec.
-                delay: Double.random(in: 0...0.4),
-                duration: Double.random(in: 1.0...1.2),
-                drift: Double.random(in: -50...50),
-                size: Double.random(in: 8...14),
-                spin: Double.random(in: -540...540),
-                color: Theme.avatarPalette[index % Theme.avatarPalette.count]
-            )
-        }
     }
 }
 

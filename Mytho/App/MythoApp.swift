@@ -23,6 +23,8 @@ struct RootView: View {
     @EnvironmentObject private var session: GameSession
     @State private var confirmQuit = false
     @State private var peeking = false
+    /// « Retour » fait ressortir l'écran par la droite, d'où il était venu.
+    @State private var navDirection: NavDirection = .forward
     /// Nul tant qu'aucun jeu n'est choisi : l'app s'ouvre sur le catalogue.
     @State private var selectedGameID: String?
 
@@ -231,7 +233,7 @@ struct RootView: View {
     private var backButton: some View {
         Button {
             Haptics.tap()
-            withAnimation(Theme.spring) { session.goBack() }
+            navigateBack(direction: $navDirection, animation: Theme.spring) { session.goBack() }
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "arrow.uturn.backward")
@@ -259,16 +261,16 @@ struct RootView: View {
         case .dealing(let playerIndex):
             DealView(engine: engine, playerIndex: playerIndex)
                 .id("deal-\(playerIndex)")
-                .transition(.forward)
+                .transition(.screen(navDirection))
 
         case .describing(let round):
             DescribeView(engine: engine, round: round)
                 .id("describe-\(round)")
-                .transition(.forward)
+                .transition(.screen(navDirection))
 
         case .voting:
             VoteView(engine: engine)
-                .transition(.forward)
+                .transition(.screen(navDirection))
 
         case .elimination(let playerIDs):
             EliminationView(engine: engine, playerIDs: playerIDs)
